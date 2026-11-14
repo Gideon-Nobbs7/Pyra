@@ -1,11 +1,11 @@
 ﻿# Globe texture assets
 
-- `earth-day-8192.webp` is an 8192×4096 WebP composite of NASA SVS's Blue Marble land and ocean layers. The source TIFFs are not shipped; `earth-day-4096.webp` is used when the GPU cannot support an 8192-pixel texture.
-- `earth-bump-2048.webp` is a 2048×1024 grayscale relief-style derivative of the shaded Blue Marble surface. It is a visual bump map, not a measured elevation product.
+- `earth-day-8192.webp` is an 8192×4096 daytime diffuse map derived from NASA's Blue Marble Next Generation January 2004 `world` base map (the non-shaded variant), with a separate NASA blue-ocean layer composited beneath the land. It contains no night-side mask or terminator shading. The 4096×2048 copy is selected when the GPU cannot support 8192-pixel textures. The Earth uses an unlit material, so its displayed brightness comes from this daytime texture.
 - `earth-clouds-alpha-4096.webp` is a 4096×2048 grayscale opacity map derived from NASA SVS's CPC cloud layer, frame 01000 (2014-06-02 00:00 UTC). It is static and illustrative, not a current cloud observation.
 
 Sources and credits:
 
-- NASA Scientific Visualization Studio, [High Resolution Layers from “Monsoons: Wet, Dry, Repeat...”](https://svs.gsfc.nasa.gov/4439/). Blue Marble land and ocean layers; credit NASA's Scientific Visualization Studio.
+- NASA Earth Observatory, [Blue Marble: Next Generation base map](https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-map/). January 2004 global `world.200401.3x21600x10800.jpg` (non-shaded, 2 km/pixel); credit NASA Earth Observatory and Reto Stöckli.
+- NASA Scientific Visualization Studio, [High Resolution Layers from “Monsoons: Wet, Dry, Repeat...”](https://svs.gsfc.nasa.gov/4439/). Blue-ocean layer; credit NASA's Scientific Visualization Studio.
 - NASA Visible Earth, [Blue Marble: Clouds](https://visibleearth.nasa.gov/images/57747/blue-marble-clouds). Cloud imagery by Reto Stöckli; cloud observations from NOAA Climate Prediction Center.
 - NASA imagery is public domain. NASA does not endorse Pyra.
