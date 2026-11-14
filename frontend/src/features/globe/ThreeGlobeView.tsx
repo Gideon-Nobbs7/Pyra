@@ -5,8 +5,12 @@ import type { GlobeObservation, GlobeViewProps } from "./GlobeView";
 
 const EARTH_RADIUS = 1.65;
 const MAX_DPR = 1.5;
+const EARTH_TEXTURE_8K_URL = `${import.meta.env.BASE_URL}textures/earth-day-8192.webp`;
+const EARTH_TEXTURE_4K_URL = `${import.meta.env.BASE_URL}textures/earth-day-4096.webp`;
+const BUMP_TEXTURE_URL = `${import.meta.env.BASE_URL}textures/earth-bump-2048.webp`;
+const CLOUD_TEXTURE_4K_URL = `${import.meta.env.BASE_URL}textures/earth-clouds-alpha-4096.webp`;
 
-function createEarthTexture(): THREE.CanvasTexture {
+function createEarthFallbackTexture(): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
   canvas.width = 1024;
   canvas.height = 512;
@@ -58,58 +62,167 @@ function createEarthTexture(): THREE.CanvasTexture {
   return texture;
 }
 
-function createCloudTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 256;
-  const context = canvas.getContext("2d");
-  if (!context) throw new Error("Unable to create the procedural cloud texture.");
+function createStarfield(): THREE.Points {
+  const count = 4200;
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  let seed = 51327;
+  const random = () => {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  };
+  const galacticNormal = new THREE.Vector3(0.22, 0.88, 0.42).normalize();
+  const tangentA = new THREE.Vector3().crossVectors(galacticNormal, new THREE.Vector3(0, 0, 1)).normalize();
+  const tangentB = new THREE.Vector3().crossVectors(galacticNormal, tangentA).normalize();
+  const colorOptions = ["#d9eaff", "#a9cfff", "#fff1d1", "#ffffff"];
 
-  for (let index = 0; index < 70; index += 1) {
-    const x = (index * 83) % canvas.width;
-    const y = 24 + ((index * 47) % 190);
-    context.fillStyle = `rgba(255, 255, 255, ${0.08 + (index % 4) * 0.025})`;
+  for (let index = 0; index < count; index += 1) {
+    let direction: THREE.Vector3;
+    if (random() < 0.76) {
+      const angle = random() * Math.PI * 2;
+      const offset = (random() + random() + random() - 1.5) * 0.14;
+      direction = tangentA.clone().multiplyScalar(Math.cos(angle))
+        .addScaledVector(tangentB, Math.sin(angle))
+        .addScaledVector(galacticNormal, offset).normalize();
+    } else {
+      const theta = random() * Math.PI * 2;
+      const y = random() * 2 - 1;
+      const radius = Math.sqrt(1 - y * y);
+      direction = new THREE.Vector3(radius * Math.cos(theta), y, radius * Math.sin(theta));
+    }
+    const distance = 28 + random() * 8;
+    positions[index * 3] = direction.x * distance;
+    positions[index * 3 + 1] = direction.y * distance;
+    positions[index * 3 + 2] = direction.z * distance;
+    const color = new THREE.Color(colorOptions[Math.floor(random() * colorOptions.length)]);
+    colors[index * 3] = color.r;
+    colors[index * 3 + 1] = color.g;
+    colors[index * 3 + 2] = color.b;
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  return new THREE.Points(
+    geometry,
+    new THREE.PointsMaterial({
+      vertexColors: true,
+      size: 0.045,
+      sizeAttenuation: true,
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false
+    })
+  );
+}
+
+function createMilkyWayBackdrop(): THREE.Mesh {
+  const canvas = document.createElement("canvas");
+  canvas.width = 2048;
+  canvas.height = 1024;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Unable to create the starfield backdrop.");
+
+  const night = context.createLinearGradient(0, 0, 0, canvas.height);
+  night.addColorStop(0, "#03050b");
+  night.addColorStop(0.48, "#07101f");
+  night.addColorStop(1, "#02040a");
+  context.fillStyle = night;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  context.save();
+  context.translate(canvas.width * 0.5, canvas.height * 0.5);
+  context.rotate(-0.33);
+  context.shadowBlur = 80;
+  context.shadowColor = "#356bb5";
+  const nebula = context.createLinearGradient(0, -180, 0, 180);
+  nebula.addColorStop(0, "rgba(33, 67, 125, 0)");
+  nebula.addColorStop(0.35, "rgba(42, 93, 165, 0.18)");
+  nebula.addColorStop(0.5, "rgba(113, 142, 194, 0.29)");
+  nebula.addColorStop(0.64, "rgba(51, 88, 153, 0.16)");
+  nebula.addColorStop(1, "rgba(33, 67, 125, 0)");
+  context.fillStyle = nebula;
+  context.fillRect(-canvas.width, -180, canvas.width * 2, 360);
+  context.restore();
+
+  let seed = 14143;
+  const random = () => {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  };
+  for (let index = 0; index < 2500; index += 1) {
+    const x = random() * canvas.width;
+    const y = random() * canvas.height;
+    const radius = random() > 0.985 ? 1.6 : 0.35 + random() * 0.65;
+    const alpha = 0.24 + random() * 0.7;
+    context.fillStyle = random() > 0.83
+      ? `rgba(151, 190, 255, ${alpha})`
+      : `rgba(231, 240, 255, ${alpha})`;
     context.beginPath();
-    context.ellipse(
-      x,
-      y,
-      24 + (index % 6) * 13,
-      7 + (index % 4) * 4,
-      index * 0.2,
-      0,
-      Math.PI * 2
-    );
+    context.arc(x, y, radius, 0, Math.PI * 2);
     context.fill();
   }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
-
-function createStarfield(): THREE.Points {
-  const positions = new Float32Array(450 * 3);
-  for (let index = 0; index < 450; index += 1) {
-    const radius = 8 + (index % 6) * 1.5;
-    const theta = (index * 2.399963) % (Math.PI * 2);
-    const phi = Math.acos(1 - 2 * ((index + 1) / 451));
-    positions[index * 3] = radius * Math.sin(phi) * Math.cos(theta);
-    positions[index * 3 + 1] = radius * Math.cos(phi);
-    positions[index * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  return new THREE.Points(
-    geometry,
-    new THREE.PointsMaterial({
-      color: "#b9d9e7",
-      size: 0.025,
-      sizeAttenuation: true,
-      transparent: true,
-      opacity: 0.72
+  const backdrop = new THREE.Mesh(
+    new THREE.SphereGeometry(80, 48, 32),
+    new THREE.MeshBasicMaterial({
+      map: texture,
+      side: THREE.BackSide,
+      depthWrite: false,
+      toneMapped: false
     })
   );
+  backdrop.renderOrder = -2;
+  return backdrop;
+}
+
+function createLensFlare(position: THREE.Vector3): THREE.Group {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Unable to create the sun flare.");
+
+  const glow = context.createRadialGradient(128, 128, 2, 128, 128, 126);
+  glow.addColorStop(0, "rgba(255,255,237,1)");
+  glow.addColorStop(0.08, "rgba(255,238,186,0.95)");
+  glow.addColorStop(0.22, "rgba(255,175,93,0.38)");
+  glow.addColorStop(0.58, "rgba(255,132,70,0.08)");
+  glow.addColorStop(1, "rgba(255,132,70,0)");
+  context.fillStyle = glow;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+
+  const flare = new THREE.Group();
+  flare.position.copy(position);
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: texture,
+    color: "#fff2cf",
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false
+  }));
+  halo.scale.set(1.05, 1.05, 1);
+  flare.add(halo);
+
+  const core = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: texture,
+    color: "#fff9e8",
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false
+  }));
+  core.scale.set(0.34, 0.34, 1);
+  flare.add(core);
+  flare.renderOrder = 10;
+  return flare;
 }
 
 function observationPosition(observation: GlobeObservation): THREE.Vector3 {
@@ -188,6 +301,7 @@ export function ThreeGlobeView({
   resetRequestId
 }: GlobeViewProps) {
   const sceneRef = useRef<THREE.Scene | null>(null);
+  const globeGroupRef = useRef<THREE.Group | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const pointsRef = useRef<THREE.Points | null>(null);
@@ -221,36 +335,101 @@ export function ThreeGlobeView({
     controls.target.set(0, 0, 0);
     controlsRef.current = controls;
 
-    scene.add(new THREE.AmbientLight("#42677A", 0.9));
-    const sun = new THREE.DirectionalLight("#FFF4DC", 2.6);
+    const backdrop = createMilkyWayBackdrop();
+    scene.add(backdrop);
+    const stars = createStarfield();
+    scene.add(stars);
+
+    scene.add(new THREE.AmbientLight("#42677A", 0.56));
+    const sun = new THREE.DirectionalLight("#FFF1D5", 3.1);
     sun.position.set(-4, 2.5, 5);
     scene.add(sun);
-    scene.add(createStarfield());
+    const flare = createLensFlare(sun.position.clone().normalize().multiplyScalar(EARTH_RADIUS * 1.28));
+    scene.add(flare);
 
+    const globeGroup = new THREE.Group();
+    const centerLatitude = THREE.MathUtils.degToRad(5);
+    const centerLongitude = THREE.MathUtils.degToRad(20);
+    const centerDirection = new THREE.Vector3(
+      Math.cos(centerLatitude) * Math.sin(centerLongitude),
+      Math.sin(centerLatitude),
+      Math.cos(centerLatitude) * Math.cos(centerLongitude)
+    );
+    globeGroup.quaternion.setFromUnitVectors(centerDirection, new THREE.Vector3(0, 0, 1));
+    scene.add(globeGroup);
+    globeGroupRef.current = globeGroup;
+
+    const loader = new THREE.TextureLoader();
+    let isDisposed = false;
     const earthMaterial = new THREE.MeshPhongMaterial({
-      map: createEarthTexture(),
-      shininess: 12,
-      specular: new THREE.Color("#7fcfe3")
+      map: createEarthFallbackTexture(),
+      shininess: 9,
+      specular: new THREE.Color("#6ca9c6")
+    });
+    const fallbackTexture = earthMaterial.map;
+    const maxTextureSize = renderer.capabilities.maxTextureSize;
+    const earthTextureUrl = maxTextureSize >= 8192 ? EARTH_TEXTURE_8K_URL : EARTH_TEXTURE_4K_URL;
+    const earthTexture = loader.load(earthTextureUrl, (texture) => {
+      if (isDisposed) {
+        texture.dispose();
+        return;
+      }
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.offset.x = 0.25;
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      earthMaterial.map = texture;
+      earthMaterial.needsUpdate = true;
+      fallbackTexture?.dispose();
+    });
+    const bumpTexture = loader.load(BUMP_TEXTURE_URL, (texture) => {
+      if (isDisposed) {
+        texture.dispose();
+        return;
+      }
+      texture.colorSpace = THREE.NoColorSpace;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.offset.x = 0.25;
+      texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+      earthMaterial.bumpMap = texture;
+      earthMaterial.bumpScale = 0.045;
+      earthMaterial.needsUpdate = true;
     });
     const earth = new THREE.Mesh(
       new THREE.SphereGeometry(EARTH_RADIUS, 96, 64),
       earthMaterial
     );
-    scene.add(earth);
+    globeGroup.add(earth);
 
     const cloudMaterial = new THREE.MeshPhongMaterial({
-      alphaMap: createCloudTexture(),
-      color: "#ffffff",
+      color: "#f6f7fb",
       transparent: true,
-      opacity: 0.42,
-      depthWrite: false
+      opacity: 0.9,
+      depthWrite: false,
+      shininess: 4,
+      side: THREE.FrontSide
     });
+    const cloudTextureUrl = CLOUD_TEXTURE_4K_URL;
+    const cloudTexture = loader.load(cloudTextureUrl, (texture) => {
+      if (isDisposed) {
+        texture.dispose();
+        return;
+      }
+      texture.colorSpace = THREE.NoColorSpace;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.offset.x = 0.25;
+      texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+      cloudMaterial.alphaMap = texture;
+      cloudMaterial.needsUpdate = true;
+    });
+    cloudMaterial.alphaMap = cloudTexture;
     const clouds = new THREE.Mesh(
       new THREE.SphereGeometry(EARTH_RADIUS * 1.012, 64, 48),
       cloudMaterial
     );
-    scene.add(clouds);
-    scene.add(createAtmosphere());
+    globeGroup.add(clouds);
+    const atmosphere = createAtmosphere();
+    globeGroup.add(atmosphere);
 
     const resize = () => {
       const { width, height } = container.getBoundingClientRect();
@@ -299,20 +478,48 @@ export function ThreeGlobeView({
     render();
 
     return () => {
+      isDisposed = true;
       cancelAnimationFrame(animationFrame);
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       resizeObserver.disconnect();
       controls.dispose();
+      if (pointsRef.current) {
+        globeGroup.remove(pointsRef.current);
+        pointsRef.current.geometry.dispose();
+        (pointsRef.current.material as THREE.PointsMaterial).dispose();
+        pointsRef.current = null;
+      }
       earth.geometry.dispose();
+      earthTexture.dispose();
+      bumpTexture.dispose();
       earthMaterial.map?.dispose();
       earthMaterial.dispose();
       clouds.geometry.dispose();
-      cloudMaterial.alphaMap?.dispose();
+      cloudTexture.dispose();
       cloudMaterial.dispose();
+      atmosphere.geometry.dispose();
+      (atmosphere.material as THREE.Material).dispose();
+      backdrop.geometry.dispose();
+      (backdrop.material as THREE.MeshBasicMaterial).map?.dispose();
+      (backdrop.material as THREE.Material).dispose();
+      stars.geometry.dispose();
+      (stars.material as THREE.Material).dispose();
+      const flareTextures = new Set<THREE.Texture>();
+      flare.traverse((object) => {
+        if (object instanceof THREE.Sprite) {
+          const material = object.material as THREE.SpriteMaterial;
+          if (material.map) flareTextures.add(material.map);
+          material.dispose();
+        }
+      });
+      flareTextures.forEach((texture) => texture.dispose());
+      globeGroup.clear();
+      scene.remove(globeGroup);
       renderer.dispose();
       container.replaceChildren();
       sceneRef.current = null;
+      globeGroupRef.current = null;
       cameraRef.current = null;
       controlsRef.current = null;
     };
@@ -320,9 +527,10 @@ export function ThreeGlobeView({
 
   useEffect(() => {
     const scene = sceneRef.current;
-    if (!scene) return;
+    const globeGroup = globeGroupRef.current;
+    if (!scene || !globeGroup) return;
     if (pointsRef.current) {
-      scene.remove(pointsRef.current);
+      globeGroup.remove(pointsRef.current);
       pointsRef.current.geometry.dispose();
       (pointsRef.current.material as THREE.PointsMaterial).dispose();
     }
@@ -330,7 +538,7 @@ export function ThreeGlobeView({
     const limitedObservations = observations.slice(0, 2000);
     pointsRef.current = createObservationPoints(limitedObservations, selectedObservationId);
     observationIdsRef.current = limitedObservations.map(({ id }) => id);
-    scene.add(pointsRef.current);
+    globeGroup.add(pointsRef.current);
   }, [observations, selectedObservationId]);
 
   useEffect(() => {
