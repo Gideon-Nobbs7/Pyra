@@ -1,0 +1,34 @@
+# Pyra demo stack: PostGIS-enabled Postgres (PG17, alpine-small).
+# Human runs: docker compose up -d db   (from repo root)
+# Verify:    docker exec -it pyra-db psql -U pyra -d pyra -c "SELECT PostGIS_Version();"
+# Then:      psql "$DATABASE_URL" -f backend/schema.sql
+
+name: pyra
+
+services:
+  db:
+    image: postgis/postgis:17-3.5-alpine
+    container_name: pyra-db
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # User/db hardcoded (non-secrets). Password stays in .env but is REQUIRED:
+      # the :? guard fails fast with a clear error if .env is not loaded,
+      # instead of silently initializing a cluster without the pyra role.
+      POSTGRES_USER: pyra
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in the repo-root .env}
+      POSTGRES_DB: pyra
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pyra -d pyra"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  pgdata:
