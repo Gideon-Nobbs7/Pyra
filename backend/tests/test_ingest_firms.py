@@ -213,6 +213,14 @@ def test_api_rejects_day_range_over_firms_cap(monkeypatch):
     assert rc == 2
 
 
+def test_ee_spike_needs_env(monkeypatch):
+    from scripts import ee_spike as spike
+
+    monkeypatch.delenv("EE_PROJECT", raising=False)
+    monkeypatch.delenv("EE_CREDENTIALS_PATH", raising=False)
+    assert spike.main(["--bbox=-3.3,4.5,1.2,11.2"]) == 2
+
+
 def test_stream_archive_reads_zip_without_extracting(tmp_path, monkeypatch):
     import zipfile
 
