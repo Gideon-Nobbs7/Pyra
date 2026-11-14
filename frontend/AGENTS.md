@@ -14,9 +14,9 @@ One query drives the screen: products plus time range plus the locked geographic
 
 ## Stack
 
-Follow the MVP stack: React, TypeScript, Vite, CesiumJS for the globe, Tailwind CSS, and Recharts for the basic chart. MapLibre GL JS with globe projection is the fallback. Test with Vitest, React Testing Library, and Playwright. Build Cesium first. Keep the MapLibre fallback behind the same `GlobeView` interface; implement it if Cesium misses the phone target or time allows. The choice stays a build-time flag, not a rewrite.
+Follow the MVP stack: React, TypeScript, Vite, Three.js custom globe as primary (watched.earth-style), Tailwind CSS, and Recharts for the basic chart. CesiumJS and MapLibre GL JS globe projection stay as fallbacks. Test with Vitest, React Testing Library, and Playwright. Build the custom globe first. Keep Cesium and MapLibre behind the same `GlobeView` interface. The choice stays a build-time flag, not a rewrite.
 
-When you scaffold, check the current official docs for the packages you add. Cesium with Vite needs static asset and worker configuration. MapLibre needs its CSS and worker setup checked against the installed version. Tailwind's setup depends on the major version. Recharts should be lazy-loaded with the chart. Record the versions you choose in `package.json` and the frontend README. Do not copy a blog snippet without checking it against the installed version.
+When you scaffold, check the current official docs for the packages you add. Three.js with Vite needs dynamic import for lazy-loading; record the version. Cesium with Vite needs static asset and worker configuration. MapLibre needs its CSS and worker setup checked against the installed version. Tailwind's setup depends on the major version. Recharts should be lazy-loaded with the chart. Bundle 1k WebP textures (`earth-day-1k`, `earth-night-1k`, `earth-clouds-1k`) in `public/textures` with attribution; add 2k only on desktop idle after the phone test passes. Record the versions you choose in `package.json` and the frontend README. Do not copy a blog snippet without checking it against the installed version.
 
 Configuration comes from Vite environment variables, for example `VITE_API_BASE_URL` with a local default. Provider keys never belong in the frontend. All provider access goes through the backend.
 
@@ -24,14 +24,14 @@ Configuration comes from Vite environment variables, for example `VITE_API_BASE_
 
 The demo must load on a phone. Treat that as a product requirement, not a later optimization.
 
-- Default to CesiumJS for the 3D feel. Keep the globe behind `src/features/globe` with one `GlobeView` interface. MapLibre GL JS globe projection is the fallback if Cesium misses the phone load or interaction target.
-- Choose one engine at build time with `VITE_GLOBE_ENGINE=cesium|maplibre`, and lazy-load only the chosen engine. Do not ship both to the phone.
-- Start Cesium without terrain and without the default Ion imagery. Use a solid globe or a small local texture until the phone test passes. Add terrain or imagery only after it passes.
+- Default to the custom Three.js globe for the watched.earth feel (textured day/night sphere, cloud shell, atmosphere rim, dark background). Keep the globe behind `src/features/globe` with one `GlobeView` interface. CesiumJS and MapLibre GL JS globe projection are fallbacks.
+- Choose one engine at build time with `VITE_GLOBE_ENGINE=custom|cesium|maplibre`, and lazy-load only the chosen engine. Do not ship more than one to the phone.
+- Start the custom globe with 1k textures only and no post-processing. Add night blend, clouds, and glow only after the phone test passes.
 - Lazy-load the globe and chart with dynamic imports. Keep the initial route small.
-- Cluster or cap markers for the MVP dataset. Use Cesium point primitives or MapLibre circle and glow layers. Do not render an unbounded global point layer.
+- Cap rendered hotspot markers at 2000 (newest-first; backend pages at max 1000). Use a single `THREE.Points` layer with glow sprites. Overflow stays in the accessible list/table with the full count. Do not render an unbounded global point layer.
 - Use touch targets that work with a thumb, a responsive layout, and a timeline that does not cover the globe.
 - Do not add a UI kit or a global state library for the MVP. React state, a small query hook, and Tailwind are enough.
-- Test the built app on a real mid-range phone over the demo connection. If Cesium fails the first-load or interaction budget, switch the flag to MapLibre and re-test.
+- Test the built app on a real mid-range phone over the demo connection. If the custom globe fails the first-load or interaction budget, stay on the lite path (1k day texture only, DPR clamp, reduced cap) before adding night, clouds, or 2k textures.
 
 ## Repo hygiene before the first install
 
@@ -41,7 +41,7 @@ The root `.gitignore` is Python-oriented. It ignores `dist/`, but it does not ig
 
 Use feature folders, not type folders:
 
-- `src/features/globe`: `GlobeView` interface, Cesium implementation, MapLibre fallback, markers, legend, selection bridge.
+- `src/features/globe`: `GlobeView` interface, custom Three.js implementation (primary), Cesium and MapLibre fallbacks, markers (2000 cap), legend, selection bridge.
 - `src/features/search`: place-name search, current-location button, globe fly-to.
 - `src/features/timeline`: date and range state, scrubber, reset to latest.
 - `src/features/details`: observation fields, source, limitations.
@@ -130,7 +130,7 @@ Globe-first does not mean globe-only.
 ## Boundaries and handoff
 
 - Do not edit `backend/`, database migrations, ingestion, or backend deployment files.
-- Keep Cesium and MapLibre imports inside `src/features/globe`. The rest of the app should not know which engine is active.
+- Keep Three.js, Cesium, and MapLibre imports inside `src/features/globe`. The rest of the app should not know which engine is active.
 - Do not implement a runtime engine switch that downloads both. Use the build flag. If the chosen engine fails, show the accessible list or table and a clear error.
 - Do not call the satellite provider directly. If a key would be exposed in the browser, stop.
 - If the contract is missing a field or an error code, propose the change to the orchestrator. Do not invent a parallel shape.
@@ -140,6 +140,6 @@ Globe-first does not mean globe-only.
 
 ## Milestone checklist
 
-- **M2:** Cesium globe, camera, markers, legend, selection, details, source and freshness, place search with fly-to, opt-in current location. Keep the MapLibre fallback behind the same interface.
+- **M2:** custom Three.js globe, camera, markers (2000 cap), legend, selection, details, source and freshness, place search with fly-to, opt-in current location. Keep Cesium and MapLibre fallbacks behind the same interface.
 - **M3:** locked-area state, timeline and calendar scrub on the same query path, request on time or area change, marker replacement, synchronized chart, calendar, count, and details, four states, race guard, reset.
 - **M4:** comparison against the historical median with defined anomalies, CSV download matching the query, metrics and ramps documented, no percentage from a zero baseline.
