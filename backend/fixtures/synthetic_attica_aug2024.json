@@ -1,0 +1,1602 @@
+[
+  {
+    "id": "synth-000-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0000",
+    "observed_at": "2024-08-01T00:00:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.76751,
+    "longitude": 23.78125,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "l",
+    "frp": null,
+    "frp_unit": null,
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-001-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0001",
+    "observed_at": "2024-08-08T05:13:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.90625,
+    "longitude": 23.30754,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "n",
+    "frp": 63.92,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-002-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0002",
+    "observed_at": "2024-08-15T10:26:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.37453,
+    "longitude": 23.82971,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "h",
+    "frp": 11.96,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-003-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0003",
+    "observed_at": "2024-08-22T15:39:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.77086,
+    "longitude": 23.4985,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "l",
+    "frp": 22.49,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-004-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0004",
+    "observed_at": "2024-08-01T20:52:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.76858,
+    "longitude": 23.60696,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "n",
+    "frp": 20.91,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-005-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0005",
+    "observed_at": "2024-08-08T02:05:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.13146,
+    "longitude": 23.79485,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "h",
+    "frp": null,
+    "frp_unit": null,
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-006-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0006",
+    "observed_at": "2024-08-15T07:18:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.16249,
+    "longitude": 23.23657,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "l",
+    "frp": 69.75,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-007-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0007",
+    "observed_at": "2024-08-22T12:31:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.31407,
+    "longitude": 22.95845,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "n",
+    "frp": 60.85,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-008-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0008",
+    "observed_at": "2024-08-01T17:44:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.85884,
+    "longitude": 23.39233,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "h",
+    "frp": 81.58,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-009-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0009",
+    "observed_at": "2024-08-08T22:57:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.81492,
+    "longitude": 23.38757,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "l",
+    "frp": 12.74,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-010-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0010",
+    "observed_at": "2024-08-15T04:10:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.17261,
+    "longitude": 24.05174,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "n",
+    "frp": null,
+    "frp_unit": null,
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-011-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0011",
+    "observed_at": "2024-08-22T09:23:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.26081,
+    "longitude": 23.99927,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "h",
+    "frp": 47.9,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-012-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0012",
+    "observed_at": "2024-08-01T14:36:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.01497,
+    "longitude": 24.21505,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "l",
+    "frp": 49.16,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-013-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0013",
+    "observed_at": "2024-08-08T19:49:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.18296,
+    "longitude": 24.02823,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "n",
+    "frp": 73.94,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-014-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0014",
+    "observed_at": "2024-08-15T01:02:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.2432,
+    "longitude": 23.70056,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "h",
+    "frp": 8.67,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-015-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0015",
+    "observed_at": "2024-08-22T06:15:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.95257,
+    "longitude": 23.24627,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "l",
+    "frp": null,
+    "frp_unit": null,
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-016-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0016",
+    "observed_at": "2024-08-01T11:28:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.91295,
+    "longitude": 23.05373,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "n",
+    "frp": 13.08,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-017-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0017",
+    "observed_at": "2024-08-08T16:41:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.19498,
+    "longitude": 23.31137,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "h",
+    "frp": 34.19,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-018-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0018",
+    "observed_at": "2024-08-15T21:54:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.89665,
+    "longitude": 23.43124,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "l",
+    "frp": 26.36,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-019-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0019",
+    "observed_at": "2024-08-22T03:07:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.20362,
+    "longitude": 24.16765,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "n",
+    "frp": 53.73,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-020-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0020",
+    "observed_at": "2024-08-01T08:20:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.26039,
+    "longitude": 23.17248,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "h",
+    "frp": null,
+    "frp_unit": null,
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-021-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0021",
+    "observed_at": "2024-08-08T13:33:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.01562,
+    "longitude": 23.16242,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "l",
+    "frp": 84.16,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-022-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0022",
+    "observed_at": "2024-08-15T18:46:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.13986,
+    "longitude": 23.782,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "n",
+    "frp": 59.77,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-023-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0023",
+    "observed_at": "2024-08-22T00:59:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.2932,
+    "longitude": 24.04571,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "h",
+    "frp": 23.32,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-024-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0024",
+    "observed_at": "2024-08-01T05:12:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.97082,
+    "longitude": 22.99173,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "l",
+    "frp": 26.42,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-025-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0025",
+    "observed_at": "2024-08-08T10:25:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.41004,
+    "longitude": 23.22428,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "n",
+    "frp": null,
+    "frp_unit": null,
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-026-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0026",
+    "observed_at": "2024-08-15T15:38:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.97027,
+    "longitude": 24.08928,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "h",
+    "frp": 57.44,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-027-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0027",
+    "observed_at": "2024-08-22T20:51:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.39018,
+    "longitude": 23.46432,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "l",
+    "frp": 41.71,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-028-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0028",
+    "observed_at": "2024-08-01T02:04:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.92264,
+    "longitude": 23.29434,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "n",
+    "frp": 49.91,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-029-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0029",
+    "observed_at": "2024-08-08T07:17:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.15921,
+    "longitude": 23.29156,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "h",
+    "frp": 76.83,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-030-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0030",
+    "observed_at": "2024-08-15T12:30:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.90352,
+    "longitude": 23.46922,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "l",
+    "frp": null,
+    "frp_unit": null,
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-031-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0031",
+    "observed_at": "2024-08-22T17:43:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.10667,
+    "longitude": 24.2468,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "n",
+    "frp": 12.27,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-032-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0032",
+    "observed_at": "2024-08-01T22:56:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.82675,
+    "longitude": 23.01125,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "h",
+    "frp": 55.2,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-033-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0033",
+    "observed_at": "2024-08-08T04:09:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.04551,
+    "longitude": 23.9797,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "l",
+    "frp": 10.08,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-034-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0034",
+    "observed_at": "2024-08-15T09:22:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.44728,
+    "longitude": 23.44611,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "n",
+    "frp": 47.33,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-035-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0035",
+    "observed_at": "2024-08-22T14:35:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.35255,
+    "longitude": 24.2124,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "h",
+    "frp": null,
+    "frp_unit": null,
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-036-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0036",
+    "observed_at": "2024-08-01T19:48:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.25451,
+    "longitude": 22.96493,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "l",
+    "frp": 59.54,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-037-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0037",
+    "observed_at": "2024-08-08T01:01:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.93678,
+    "longitude": 23.64806,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "n",
+    "frp": 56.28,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-038-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0038",
+    "observed_at": "2024-08-15T06:14:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.05434,
+    "longitude": 23.09502,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "h",
+    "frp": 41.3,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-039-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0039",
+    "observed_at": "2024-08-22T11:27:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.3631,
+    "longitude": 24.18996,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "l",
+    "frp": 26.07,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-040-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0040",
+    "observed_at": "2024-08-01T16:40:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.87506,
+    "longitude": 23.60076,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "n",
+    "frp": null,
+    "frp_unit": null,
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-041-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0041",
+    "observed_at": "2024-08-08T21:53:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.35936,
+    "longitude": 24.13642,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "h",
+    "frp": 28.88,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-042-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0042",
+    "observed_at": "2024-08-15T03:06:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.17628,
+    "longitude": 23.78063,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "l",
+    "frp": 17.23,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-043-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0043",
+    "observed_at": "2024-08-22T08:19:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.12757,
+    "longitude": 23.94126,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "n",
+    "frp": 67.29,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-044-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0044",
+    "observed_at": "2024-08-01T13:32:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.7504,
+    "longitude": 23.63946,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "h",
+    "frp": 30.93,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-045-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0045",
+    "observed_at": "2024-08-08T18:45:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.40037,
+    "longitude": 22.97532,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "l",
+    "frp": null,
+    "frp_unit": null,
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-046-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0046",
+    "observed_at": "2024-08-15T00:58:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.33217,
+    "longitude": 24.09234,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "n",
+    "frp": 29.6,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-047-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0047",
+    "observed_at": "2024-08-22T05:11:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.36461,
+    "longitude": 23.0253,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "h",
+    "frp": 80.76,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-048-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0048",
+    "observed_at": "2024-08-01T10:24:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.09019,
+    "longitude": 23.06135,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "l",
+    "frp": 10.54,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-049-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0049",
+    "observed_at": "2024-08-08T15:37:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.28608,
+    "longitude": 23.93878,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "n",
+    "frp": 15.27,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-050-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0050",
+    "observed_at": "2024-08-15T20:50:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.13486,
+    "longitude": 23.56787,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "h",
+    "frp": null,
+    "frp_unit": null,
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-051-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0051",
+    "observed_at": "2024-08-22T02:03:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.3607,
+    "longitude": 23.29457,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "l",
+    "frp": 38.85,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-052-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0052",
+    "observed_at": "2024-08-01T07:16:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.12751,
+    "longitude": 23.22534,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "n",
+    "frp": 63.39,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-053-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0053",
+    "observed_at": "2024-08-08T12:29:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.9682,
+    "longitude": 23.2115,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "h",
+    "frp": 84.61,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-054-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0054",
+    "observed_at": "2024-08-15T17:42:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.05667,
+    "longitude": 23.79484,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "l",
+    "frp": 46.41,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-055-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0055",
+    "observed_at": "2024-08-22T22:55:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.90729,
+    "longitude": 23.10731,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "n",
+    "frp": null,
+    "frp_unit": null,
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-056-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0056",
+    "observed_at": "2024-08-01T04:08:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.16182,
+    "longitude": 23.38951,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "h",
+    "frp": 23.41,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-057-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0057",
+    "observed_at": "2024-08-08T09:21:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.7997,
+    "longitude": 23.23628,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "l",
+    "frp": 55.49,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-058-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0058",
+    "observed_at": "2024-08-15T14:34:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.38379,
+    "longitude": 23.24762,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "n",
+    "frp": 73.77,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-059-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0059",
+    "observed_at": "2024-08-22T19:47:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.9166,
+    "longitude": 23.04211,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "h",
+    "frp": 58.52,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-060-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0060",
+    "observed_at": "2024-08-01T01:00:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.84262,
+    "longitude": 23.22851,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "l",
+    "frp": null,
+    "frp_unit": null,
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-061-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0061",
+    "observed_at": "2024-08-08T06:13:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.14973,
+    "longitude": 24.16617,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "n",
+    "frp": 42.81,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-062-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0062",
+    "observed_at": "2024-08-15T11:26:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.31525,
+    "longitude": 23.97001,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "h",
+    "frp": 20.23,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-063-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0063",
+    "observed_at": "2024-08-22T16:39:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.05174,
+    "longitude": 23.07601,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "l",
+    "frp": 38.89,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-064-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0064",
+    "observed_at": "2024-08-01T21:52:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.26035,
+    "longitude": 23.55713,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "n",
+    "frp": 58.87,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-065-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0065",
+    "observed_at": "2024-08-08T03:05:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.81889,
+    "longitude": 24.22941,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "h",
+    "frp": null,
+    "frp_unit": null,
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-066-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0066",
+    "observed_at": "2024-08-15T08:18:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.98751,
+    "longitude": 23.47341,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "l",
+    "frp": 73.93,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-067-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0067",
+    "observed_at": "2024-08-22T13:31:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.88315,
+    "longitude": 23.27325,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "n",
+    "frp": 40.89,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-068-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0068",
+    "observed_at": "2024-08-01T18:44:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.94498,
+    "longitude": 23.49845,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "h",
+    "frp": 24.98,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-069-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0069",
+    "observed_at": "2024-08-08T00:57:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.06019,
+    "longitude": 24.15025,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "l",
+    "frp": 73.91,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-070-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0070",
+    "observed_at": "2024-08-15T05:10:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.78541,
+    "longitude": 23.66542,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "n",
+    "frp": null,
+    "frp_unit": null,
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-071-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0071",
+    "observed_at": "2024-08-22T10:23:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.33522,
+    "longitude": 24.24907,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "h",
+    "frp": 82.52,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-072-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0072",
+    "observed_at": "2024-08-01T15:36:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.34409,
+    "longitude": 24.15428,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "l",
+    "frp": 18.3,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-073-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0073",
+    "observed_at": "2024-08-08T20:49:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.89962,
+    "longitude": 23.58133,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "n",
+    "frp": 37.08,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-074-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0074",
+    "observed_at": "2024-08-15T02:02:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.01528,
+    "longitude": 23.02623,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "h",
+    "frp": 83.82,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-075-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0075",
+    "observed_at": "2024-08-22T07:15:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.29885,
+    "longitude": 23.29476,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "l",
+    "frp": null,
+    "frp_unit": null,
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-076-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0076",
+    "observed_at": "2024-08-01T12:28:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.04611,
+    "longitude": 23.54151,
+    "instrument": "MODIS",
+    "platform": "Terra",
+    "confidence": "n",
+    "frp": 81.59,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-077-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0077",
+    "observed_at": "2024-08-08T17:41:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.13904,
+    "longitude": 24.24405,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "h",
+    "frp": 62.47,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "D"
+    }
+  },
+  {
+    "id": "synth-078-modis",
+    "source": "modis",
+    "source_record_id": "MODIS-SYN-0078",
+    "observed_at": "2024-08-15T22:54:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 37.9577,
+    "longitude": 23.15124,
+    "instrument": "MODIS",
+    "platform": "Aqua",
+    "confidence": "l",
+    "frp": 82.5,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "6.1NRT",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  },
+  {
+    "id": "synth-079-viirs",
+    "source": "viirs",
+    "source_record_id": "VIIRS-SYN-0079",
+    "observed_at": "2024-08-22T04:07:00+00:00",
+    "ingested_at": "2024-09-01T12:00:00+00:00",
+    "latitude": 38.12954,
+    "longitude": 23.70293,
+    "instrument": "VIIRS",
+    "platform": "Suomi NPP",
+    "confidence": "n",
+    "frp": 64.84,
+    "frp_unit": "MW",
+    "quality_flags": null,
+    "product_version": "VNP14IMG",
+    "raw_properties": {
+      "synthetic": true,
+      "daynight": "N"
+    }
+  }
+]
