@@ -291,6 +291,207 @@ function createAtmosphere(): THREE.Mesh {
   );
 }
 
+function createSatelliteModel(): { group: THREE.Group; dispose: () => void } {
+  const group = new THREE.Group();
+  group.name = "Earth-observing satellite";
+  group.rotation.set(0.12, -0.18, 0.08);
+
+  const geometries = new Set<THREE.BufferGeometry>();
+  const materials = new Set<THREE.Material>();
+  const material = (color: string, metalness: number, roughness: number) => {
+    const value = new THREE.MeshStandardMaterial({ color, metalness, roughness, side: THREE.DoubleSide });
+    materials.add(value);
+    return value;
+  };
+  const foil = material("#c58b48", 0.78, 0.38);
+  const foilLight = material("#e3bc7c", 0.7, 0.3);
+  const structure = material("#9aaab5", 0.82, 0.27);
+  const structureDark = material("#36434c", 0.86, 0.32);
+  const panelBacking = material("#0d1b2e", 0.65, 0.32);
+  const cellMaterials = [
+    material("#183c66", 0.56, 0.31),
+    material("#245383", 0.58, 0.28),
+    material("#102b4d", 0.62, 0.3)
+  ];
+  const dishMaterial = material("#657987", 0.76, 0.26);
+  const darkDishMaterial = material("#273642", 0.72, 0.3);
+  const emissiveMaterial = new THREE.MeshStandardMaterial({
+    color: "#e6d2aa", emissive: "#ff8a36", emissiveIntensity: 0.12,
+    metalness: 0.7, roughness: 0.32
+  });
+  materials.add(emissiveMaterial);
+
+  const addMesh = (geometry: THREE.BufferGeometry, surface: THREE.Material, name: string, position: THREE.Vector3) => {
+    geometries.add(geometry);
+    const mesh = new THREE.Mesh(geometry, surface);
+    mesh.name = name;
+    mesh.position.copy(position);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+    return mesh;
+  };
+  const box = (name: string, size: [number, number, number], position: [number, number, number], surface: THREE.Material) =>
+    addMesh(new THREE.BoxGeometry(...size), surface, name, new THREE.Vector3(...position));
+  const cylinder = (
+    name: string,
+    radiusTop: number,
+    radiusBottom: number,
+    height: number,
+    position: [number, number, number],
+    surface: THREE.Material,
+    radialSegments = 10
+  ) => addMesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, radialSegments), surface, name, new THREE.Vector3(...position));
+  const strut = (name: string, from: THREE.Vector3, to: THREE.Vector3, radius: number, surface: THREE.Material) => {
+    const direction = to.clone().sub(from);
+    const mesh = addMesh(
+      new THREE.CylinderGeometry(radius * 0.82, radius, direction.length(), 8),
+      surface,
+      name,
+      from.clone().add(to).multiplyScalar(0.5)
+    );
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+    return mesh;
+  };
+
+  // The equipment bus uses layered foil, radiators, and exposed structural rails.
+  box("bus frame", [0.43, 0.48, 0.39], [0, 0, 0], structureDark);
+  box("gold thermal blanket front", [0.35, 0.37, 0.025], [0, 0.015, 0.207], foil);
+  box("gold thermal blanket rear", [0.35, 0.37, 0.025], [0, 0.015, -0.207], foilLight);
+  box("upper avionics panel", [0.27, 0.12, 0.025], [0, 0.155, 0.226], structure);
+  box("lower radiator panel", [0.31, 0.14, 0.024], [0, -0.145, 0.225], structure);
+  box("left equipment bay", [0.12, 0.29, 0.32], [-0.267, 0.02, 0], foilLight);
+  box("right equipment bay", [0.12, 0.25, 0.3], [0.267, -0.015, 0], foil);
+  box("front antenna deck", [0.25, 0.09, 0.035], [0, 0.275, 0.035], structure);
+  box("rear radiator", [0.3, 0.31, 0.025], [0.015, 0.025, -0.23], structure);
+
+  // Small instruments, rails, thrusters, and plumbing break up the bus silhouette.
+  for (const x of [-0.16, 0.16]) {
+    for (const z of [-0.13, 0.13]) {
+      cylinder("bus corner standoff", 0.028, 0.028, 0.4, [x, 0, z], structure, 8);
+    }
+    box("bus side rail", [0.035, 0.52, 0.035], [x, 0, 0.018], foilLight);
+  }
+  for (const x of [-0.13, -0.045, 0.045, 0.13]) {
+    box("radiator fin", [0.025, 0.2, 0.025], [x, -0.31, 0.08], structure);
+  }
+  cylinder("thruster body", 0.067, 0.09, 0.17, [0.02, -0.34, -0.04], structureDark, 12);
+  cylinder("thruster nozzle", 0.09, 0.045, 0.1, [0.02, -0.46, -0.04], foilLight, 12);
+  cylinder("side thruster left", 0.048, 0.07, 0.12, [-0.25, -0.2, -0.13], structure, 10).rotation.z = Math.PI / 2;
+  cylinder("side thruster right", 0.048, 0.07, 0.12, [0.25, -0.2, -0.13], structure, 10).rotation.z = -Math.PI / 2;
+  box("sensor housing", [0.13, 0.11, 0.16], [0.08, -0.06, 0.235], structureDark);
+  cylinder("sensor barrel", 0.039, 0.054, 0.14, [0.08, -0.06, 0.36], structure, 12).rotation.x = Math.PI / 2;
+  cylinder("sensor aperture", 0.033, 0.033, 0.012, [0.08, -0.06, 0.437], emissiveMaterial, 12).rotation.x = Math.PI / 2;
+
+  // Solar wings: individual blue cells, reflective rails, and deployment booms.
+  for (const side of [-1, 1]) {
+    const wing = new THREE.Group();
+    wing.name = side < 0 ? "port solar wing" : "starboard solar wing";
+    group.add(wing);
+    const wingPosition = new THREE.Vector3(side * 0.82, 0, 0.015);
+    const backing = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.53, 0.018), panelBacking);
+    backing.name = "solar wing backing";
+    backing.position.copy(wingPosition);
+    wing.add(backing);
+    geometries.add(backing.geometry);
+
+    for (let column = 0; column < 4; column += 1) {
+      for (let row = 0; row < 3; row += 1) {
+        const x = side * (0.37 + column * 0.278);
+        const y = (row - 1) * 0.166;
+        const cell = new THREE.Mesh(
+          new THREE.BoxGeometry(0.248, 0.145, 0.009),
+          cellMaterials[(column + row + (side > 0 ? 1 : 0)) % cellMaterials.length]
+        );
+        cell.name = "segmented photovoltaic cell";
+        cell.position.set(x, y, 0.032);
+        wing.add(cell);
+        geometries.add(cell.geometry);
+      }
+    }
+    const rootX = side * 0.23;
+    const outerX = side * 1.41;
+    for (const y of [-0.275, 0.275]) {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.018, 0.028), structure);
+      rail.name = "solar array edge rail";
+      rail.position.set(side * 0.82, y, 0.03);
+      wing.add(rail);
+      geometries.add(rail.geometry);
+    }
+    for (const x of [rootX, outerX]) {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.55, 0.028), foilLight);
+      rail.name = "solar array end rail";
+      rail.position.set(x, 0, 0.03);
+      wing.add(rail);
+      geometries.add(rail.geometry);
+    }
+    for (let column = 1; column < 4; column += 1) {
+      const seam = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.51, 0.018), structureDark);
+      seam.name = "solar cell divider";
+      seam.position.set(side * (0.37 + column * 0.278 - 0.139), 0, 0.038);
+      wing.add(seam);
+      geometries.add(seam.geometry);
+    }
+    strut("solar wing deployment boom", new THREE.Vector3(side * 0.2, 0.04, 0.01), new THREE.Vector3(side * 0.33, 0.02, 0.02), 0.022, foilLight);
+    strut("wing support brace", new THREE.Vector3(side * 0.22, -0.18, -0.015), new THREE.Vector3(side * 0.4, 0.18, -0.015), 0.012, structure);
+  }
+
+  // Concave reflectors, feed horns, and booms give the craft its communications payload silhouette.
+  const addDish = (name: string, position: [number, number, number], radius: number, surface: THREE.Material) => {
+    const dishGroup = new THREE.Group();
+    dishGroup.name = name;
+    dishGroup.position.set(...position);
+    group.add(dishGroup);
+    const profile = [
+      new THREE.Vector2(0, 0.012),
+      new THREE.Vector2(radius * 0.27, 0.02),
+      new THREE.Vector2(radius * 0.53, radius * 0.12),
+      new THREE.Vector2(radius * 0.78, radius * 0.29),
+      new THREE.Vector2(radius, radius * 0.5)
+    ];
+    const reflector = new THREE.Mesh(new THREE.LatheGeometry(profile, 28), surface);
+    reflector.name = "parabolic antenna reflector";
+    reflector.rotation.x = Math.PI / 2;
+    dishGroup.add(reflector);
+    geometries.add(reflector.geometry);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.012, 6, 32), structure);
+    rim.name = "antenna rim";
+    rim.position.z = radius * 0.5;
+    dishGroup.add(rim);
+    geometries.add(rim.geometry);
+    const feedArm = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, radius * 0.84, 6), foilLight);
+    feedArm.name = "antenna feed support";
+    feedArm.rotation.x = Math.PI / 2;
+    feedArm.position.set(0, 0, radius * 0.29);
+    dishGroup.add(feedArm);
+    geometries.add(feedArm.geometry);
+    const feed = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.022, 0.075, 8), structureDark);
+    feed.name = "antenna feed horn";
+    feed.rotation.x = Math.PI / 2;
+    feed.position.set(0, 0, radius * 0.55 + 0.035);
+    dishGroup.add(feed);
+    geometries.add(feed.geometry);
+    strut("antenna mounting boom", new THREE.Vector3(position[0] * 0.6, position[1] * 0.55, 0.08), new THREE.Vector3(position[0], position[1], position[2]), 0.014, structure);
+  };
+  addDish("large high-gain dish", [-0.22, 0.31, 0.2], 0.19, darkDishMaterial);
+  addDish("secondary high-gain dish", [0.29, -0.22, 0.18], 0.145, dishMaterial);
+  addDish("small telemetry dish", [-0.22, -0.28, 0.13], 0.09, structure);
+
+  strut("top antenna mast", new THREE.Vector3(0.13, 0.23, -0.08), new THREE.Vector3(0.22, 0.49, -0.08), 0.009, structure);
+  strut("antenna crossbar", new THREE.Vector3(0.16, 0.42, -0.08), new THREE.Vector3(0.29, 0.42, -0.08), 0.007, foilLight);
+  const beacon = new THREE.PointLight("#b4dcff", 0.24, 1.1, 2);
+  beacon.position.set(0.02, 0.12, 0.27);
+  group.add(beacon);
+
+  return {
+    group,
+    dispose: () => {
+      geometries.forEach((geometry) => geometry.dispose());
+      materials.forEach((surface) => surface.dispose());
+    }
+  };
+}
+
 export function ThreeGlobeView({
   containerRef,
   observations,
@@ -416,6 +617,33 @@ export function ThreeGlobeView({
     const atmosphere = createAtmosphere();
     globeGroup.add(atmosphere);
 
+    const orbitObject = new THREE.Object3D();
+    const satelliteModel = createSatelliteModel();
+    const satelliteGroup = satelliteModel.group;
+    satelliteGroup.scale.setScalar(0.26);
+
+    const satelliteTrailGeometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0.07),
+      new THREE.Vector3(0, 0, 0.22),
+      new THREE.Vector3(0, 0, 0.38),
+      new THREE.Vector3(0, 0, 0.56)
+    ]);
+    const satelliteTrail = new THREE.Line(
+      satelliteTrailGeometry,
+      new THREE.LineBasicMaterial({
+        color: "#8bdcff",
+        transparent: true,
+        opacity: 0.42,
+        depthWrite: false
+      })
+    );
+    satelliteTrail.scale.setScalar(1 / 0.26);
+    satelliteGroup.add(satelliteTrail);
+
+    satelliteGroup.position.set(EARTH_RADIUS + 0.4, 0, 0);
+    orbitObject.add(satelliteGroup);
+    scene.add(orbitObject);
+
     const resize = () => {
       const { width, height } = container.getBoundingClientRect();
       camera.aspect = Math.max(width, 1) / Math.max(height, 1);
@@ -457,6 +685,8 @@ export function ThreeGlobeView({
     const render = () => {
       controls.update();
       clouds.rotation.y += 0.00015;
+      orbitObject.rotation.y += 0.005;
+      orbitObject.rotation.x += 0.001;
       renderer.render(scene, camera);
       animationFrame = requestAnimationFrame(render);
     };
@@ -482,6 +712,11 @@ export function ThreeGlobeView({
       clouds.geometry.dispose();
       cloudTexture.dispose();
       cloudMaterial.dispose();
+      satelliteModel.dispose();
+      satelliteTrailGeometry.dispose();
+      satelliteTrail.material.dispose();
+      orbitObject.remove(satelliteGroup);
+      scene.remove(orbitObject);
       atmosphere.geometry.dispose();
       (atmosphere.material as THREE.Material).dispose();
       backdrop.geometry.dispose();

@@ -1,0 +1,191 @@
+{
+   "checksum": "7739588c9a7aaf0d1256ad7dab01c8cd",
+   "roots": {
+      "bookmark_bar": {
+         "children": [ {
+            "date_added": "13272935407724044",
+            "date_last_used": "13430685105330532",
+            "guid": "66824aa9-120b-4d7a-969f-6e69ffabefe3",
+            "id": "15",
+            "name": "Gmail",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://accounts.google.com/b/0/AddMailService",
+            "visit_count": 4
+         }, {
+            "date_added": "0",
+            "date_last_used": "13437849776105399",
+            "guid": "2fd2df4c-f009-47b2-bb22-8be60293a1a1",
+            "id": "16",
+            "name": "YouTube",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://youtube.com/",
+            "visit_count": 67
+         }, {
+            "date_added": "13272935407750609",
+            "date_last_used": "0",
+            "guid": "f53e9e84-d795-4b22-b94e-2ad9d4479d5d",
+            "id": "17",
+            "name": "Maps",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://maps.google.com/",
+            "visit_count": 0
+         }, {
+            "date_added": "0",
+            "date_last_used": "0",
+            "guid": "099011c6-0703-4faa-999f-f0ca1a64e513",
+            "id": "18",
+            "name": "News",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://news.google.com/",
+            "visit_count": 0
+         }, {
+            "date_added": "0",
+            "date_last_used": "13421145725565997",
+            "guid": "9a17a220-9e83-4041-86a9-e2d31ec320d8",
+            "id": "19",
+            "name": "Translate",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://translate.google.com/",
+            "visit_count": 1
+         }, {
+            "children": [ {
+               "date_added": "13409000737741979",
+               "date_last_used": "0",
+               "guid": "953dccc7-cda1-48a5-85cb-9c40c8117af4",
+               "id": "21",
+               "name": "Razer - For Gamers. By Gamers. - Razer United States",
+               "show_icon": false,
+               "source": "import_fre",
+               "type": "url",
+               "url": "http://www.razerzone.com/",
+               "visit_count": 0
+            }, {
+               "date_added": "13409000737741979",
+               "date_last_used": "0",
+               "guid": "46bd4f70-11dd-46cb-89b0-d4b0f59acbc8",
+               "id": "22",
+               "name": "Razer Support",
+               "show_icon": false,
+               "source": "import_fre",
+               "type": "url",
+               "url": "http://www.razersupport.com/",
+               "visit_count": 0
+            } ],
+            "date_added": "13439147504501555",
+            "date_last_used": "0",
+            "date_modified": "13439147518219515",
+            "guid": "a81a742a-b166-4e1b-bf0f-0dadd9f85621",
+            "id": "20",
+            "name": "Razer",
+            "source": "unknown",
+            "type": "folder"
+         } ],
+         "date_added": "13439147500895045",
+         "date_last_used": "0",
+         "date_modified": "13272935407750609",
+         "guid": "0bc5d13f-2cba-5d74-951f-3f233fe6c908",
+         "id": "1",
+         "name": "Favorites bar",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "other": {
+         "children": [ {
+            "children": [  ],
+            "date_added": "13301404800789502",
+            "date_last_used": "0",
+            "date_modified": "13301404800789502",
+            "guid": "ea957554-ad31-4b14-bd7d-9dfc0a1e0c58",
+            "id": "10",
+            "name": "Other Bookmarks",
+            "source": "unknown",
+            "type": "folder"
+         }, {
+            "children": [ {
+               "date_added": "0",
+               "date_last_used": "0",
+               "guid": "97db9021-06d0-4426-9ee8-21212c6cd253",
+               "id": "12",
+               "name": "Thank You",
+               "show_icon": false,
+               "source": "sync",
+               "type": "url",
+               "url": "https://iu-application.com/obw-v1/upload/index.html?key=7ef59476-7e89-49b3-ad86-b4c5a19ee795",
+               "visit_count": 0
+            }, {
+               "date_added": "0",
+               "date_last_used": "0",
+               "guid": "529abc1a-6025-4278-a277-2af0565e545b",
+               "id": "13",
+               "name": "Bachelor in Computer Science | Campus & Online Studies | IU",
+               "show_icon": false,
+               "source": "sync",
+               "type": "url",
+               "url": "https://www.iu.org/lp/bachelor/computer-science/?gclid=EAIaIQobChMInrCUy_vJ8wIVEdrtCh1q_gKCEAEYASABEgKa8vD_BwE",
+               "visit_count": 0
+            }, {
+               "date_added": "0",
+               "date_last_used": "0",
+               "guid": "92abb974-1234-4406-a246-094081a1931f",
+               "id": "14",
+               "name": "Electronic Diversity Visa Program",
+               "show_icon": false,
+               "source": "sync",
+               "type": "url",
+               "url": "https://dvprogram.state.gov/application.aspx",
+               "visit_count": 0
+            } ],
+            "date_added": "13301404800789673",
+            "date_last_used": "0",
+            "date_modified": "13301404800789673",
+            "guid": "962fb62b-e6b1-446a-a092-144bbdd5882e",
+            "id": "11",
+            "name": "Synced Bookmarks",
+            "source": "unknown",
+            "type": "folder"
+         } ],
+         "date_added": "13439147500895045",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "82b081ec-3dd3-529c-8475-ab6c344590dd",
+         "id": "2",
+         "name": "Other favorites",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "synced": {
+         "children": [  ],
+         "date_added": "13439147500895045",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "4cf2e351-0e85-532b-bb37-df045d8f8d0f",
+         "id": "3",
+         "name": "Mobile favorites",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "workspaces_v2": {
+         "children": [  ],
+         "date_added": "13439147500895045",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "75aa6670-344f-549d-b742-660f029506ab",
+         "id": "5",
+         "name": "Workspaces",
+         "source": "unknown",
+         "type": "folder"
+      }
+   },
+   "sync_metadata": "CjEKDgiIgQISCGcu5dqhAQAAEgAqGGFpQnJCUjhZaDVXb3ZaMUFxNVhMemc9PUgDoAYHEowBCAMShwEKHG5qZ0R1ODhlQ3J2WHA4NnBEN2ZIR2NxRnA4OD0SJGE5NDgxNzY2LTgzZDItNWFlZC05YWVjLTQ3YmM0ZDVhOGU3OBgAIAAoADC0vdr0sTA409epxpwwQNPXqcacMEoceXpOQjAxY241NEE3Y1JVMHVUKy9QZ21UdFVvPWUAAAAAwj4CYAASrAEIFRKnAQocQnRieUdHOEpPa3QwRUFCVWdDZDgrcXVVV2cwPRIkOTUzZGNjYzctY2RhMS00OGE1LTg1Y2ItOWM0MGM4MTE3YWY0GAAgACgAMKnq4+3BMzjq7OPtwTNA6uzj7cEzShxSaXZ2eVRvaGw2WlByYTNDaVNKbjVQb0tBcWc9Wh4iHGlOaUlQd2NidVEzNm1nbU0rM2xvbWNTMlJtST1lAAAAAMI+AmACEq0BCBQSqAEKHGdBWENVbDdEMGJyTkRzYjBNVDRROW9aa0drTT0SJGE4MWE3NDJhLWIxNjYtNGUxYi1iZjBmLTBkYWRkOWY4NTYyMRgAIAAoADCo6uPtwTM4z+zj7cEzQM/s4+3BM0ocbk5tVTNQOWI2bTJmcUFCTUpsSFp5eWRxRlh3PVofIh36TVUyV3N5QjFoSWhEa0NWYlVMazU0UzJPVmpBPWUAAAAAwj4CYAASrQEIERKoAQocQjFUSThMNnk0eUdJcjAwSjBOOVV6RTFUL2xVPRIkZjUzZTllODQtZDc5NS00YjIyLWI5NGUtMmFkOWQ0NDc5ZDVkGAAgACgAML2h3a3ZMzie9q7GnDBAnvauxpwwShxZN21MVHBRcWw2Vm5JdnljRTg5VStVdGJCTlE9Wh8iHdU1M3pkWHVrdzdXQWF5ZzJkVGF6Q01wV2NUOVU9ZTXVs6PCPgJgBRKMAQgCEocBChxZY1NUb252RVNQd3FDczRMMmNyVmh2NjhMOTg9EiQzYTVkMjVmYy1kOWM3LTUwNjMtYjRiZi01NWQ2YzlmZDY2OGUYACAAKAAwtL3a9LEwOJTXqcacMECU16nGnDBKHG9QVmtod0JSYlY2NUtDV1IyK0lPTkhXb091OD1lAAAAAMI+AmAAEq0BCBASqAEKHGNkdUVlQk9DS2EzM3Y3bCswcm45bFE5c2VSYz0SJDJmZDJkZjRjLWYwMDktNDdiMi1iYjIyLThiZTYwMjkzYTFhMRgAIAAoADDHobPsmDQ4wPWuxpwwQMD1rsacMEocNUtOU3liSyt0elhGNFdQR3QxMGV5QTYyQXVVPVofIh2qSWJUQWF4NnVLQmczb3QzZ0pQeHBvTmgzdUc0PWVQQsPSwj4CYAUSrQEIFhKoAQocb2tiME50K25Ua1pHbnZHaXFjaythUHc2NHZjPRIkNDZiZDRmNzAtMTFkZC00NmNiLTg5YjAtZDRiMGY1OWFjYmM4GAAgACgAMKrq4+3BMziF7ePtwTNAhe3j7cEzShx1ODZzNTJUbVc5Um1mMVVKY2V0SDJGanAyY2M9Wh8iHbRZTGcyMU5mcWZJU1RIVjRCK3phNHR6VkZCek09ZQAAAADCPgJgAhKMAQgBEocBChx5eEovNmZ2a2VjcjdrcDVFUXpCNHRXTHBkYkU9EiQ0ODRhZmMwNy05NmJjLTVjNmUtOTE0My01ODM4MmFjNTU0NTkYACAAKAAwtL3a9LEwOIXXqcacMECF16nGnDBKHGFSQ1dMZ2hGOWI1SW5xS0lEdnVKL2p2UWtGYz1lAAAAAMI+AmAAEq0BCA4SqAEKHHd1cFZrbUlPR3dZUHJHSXNEeUhmSE5HSDVPYz0SJDkyYWJiOTc0LTEyMzQtNDQwNi1hMjQ2LTA5NDA4MWExOTMxZhgAIAAoADCc9a7GnDA47PauxpwwQOz2rsacMEocNkRyT003anRnV0VZWEdlUTh5RXl6ZUhTV28wPVofIh29TEFxMnR0UnMvWTRuays5RXNzai9Zc3ZaT0JFPWUAAAAAwj4CYAUSrQEICxKoAQocVzFoY3FRRno2emtGN1Vzb0RXcEJxU2daMEVjPRIkOTYyZmI2MmItZTZiMS00NDZhLWEwOTItMTQ0YmJkZDU4ODJlGAAgACgAMJz1rsacMDi99q7GnDBAvfauxpwwShx0eXV2RThCVmRhVlZFQU16TVFSNDJ4K3RnK2M9Wh8iHbRNRUYxL1ZTWlJFakNUMlIvRW91TExEUkpUSkk9ZQAAAADCPgJgABKsAQgNEqcBChwrMnBCamFRREZNSEhkR09oTkl0SVFTa3lNbzA9EiQ1MjlhYmMxYS02MDI1LTQyNzgtYTI3Ny0yYWYwNTY1ZTU0NWIYACAAKAAwnPWuxpwwON32rsacMEDd9q7GnDBKHEpMM0cramVNc3piUFFySXFmS1krSFlza1R4az1aHiIcekttUjRWZHdFZVJ0b0VxVW5oazZaT21uZjFVPWUAAAAAwj4CYAUSrQEIExKoAQocbStwNTRUcHFLQUtSTi85azVRU21YMGxQYzZ3PRIkOWExN2EyMjAtOWU4My00MDQxLTg2YTktZTJkMzFlYzMyMGQ4GAAgACgAMLaLpc/aMzjv9a7GnDBA7/WuxpwwShxxd2c3ZXdla0NhZCtBamJqa1I4RlF3OE96MEk9Wh8iHfVpWnlubitibVZkeXFNY1VlcFRhMEh5MjBDZlk9ZZwLqjbCPgJgBRKsAQgMEqcBChxoUEo5M1NwTjZPRlUxeEJPaUt0cUE5SXF4WkE9EiQ5N2RiOTAyMS0wNmQwLTQ0MjYtOWVlOC0yMTIxMmM2Y2QyNTMYACAAKAAwnPWuxpwwOM32rsacMEDN9q7GnDBKHFRQamRhay9BcXA4RlNtRmVwN1dwbGs3RWJDVT1aHiIcWWpQR0QvMWtDdzg2MEo0QkxnSFVRbG9VN0M4PWUAAAAAwj4CYAUSrAEIChKnAQocdCsyZXZtRStlcEdqWHZtUFkzNlkrcERLV2U0PRIkZWE5NTc1NTQtYWQzMS00YjE0LWJkN2QtOWRmYzBhMWUwYzU4GAAgACgAMJz1rsacMDiP9q7GnDBAj/auxpwwShxCN251UnU3NGZZcVBlTHAwNVdkbGxhOVpLY009Wh4iHGh0MFEzZ2J3T3htaXpJZ0w5WHJWcUpDTFIvTT1lAAAAAMI+AmAAEq0BCBISqAEKHEl4MWgzT0xnN3RaK3JQbzJSaFVhZVdEbVN1TT0SJDA5OTAxMWM2LTA3MDMtNGZhYS05OTlmLWYwY2ExYTY0ZTUxMxgAIAAoADD3jfqZyTE44PWuxpwwQOD1rsacMEoccHFZMnlmNlVMZWhsdW9MYVNFU0t0UXdLUk00PVofIh3qVnNXNWdYMEVxTUhUaUJTS0tiYlZtaWhNcldFPWVd9VIKwj4CYAUSrAEIDxKnAQocdllLZ1FLMUllYytwOGdZM2REbU82V2tnOTVNPRIkNjY4MjRhYTktMTIwYi00ZDdhLTk2OWYtNmU2OWZmYWJlZmUzGAAgACgAMIO7gpT+Mzj/9a7GnDBA//WuxpwwShxESmJ1UFA1VWFXVTV2bGtJanVuenlOV3NYSlk9Wh4iHFQvNm9ickJFUzlvTkExTkFieUVvSXQ3TktoQT1l4ExPZMI+AmAFEowBCAUShwEKHHdSQnJaTCs2UEE5YXZLZ2pOUDdKWERMY2Z2cz0SJDgxNGVkNjAzLTZmMDEtNTlkMC1hZjFiLTkxYTI2MDM3YTBjYhgAIAAoADCZ18GcpDM4xdfBnKQzQMXXwZykM0ocbm14NjVzUUR2eEk4VGdFZXYrQStudHRvU240PWUAAAAAwj4CYAAwADgA",
+   "version": 1
+}
