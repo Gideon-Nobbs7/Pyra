@@ -7,7 +7,6 @@ const EARTH_RADIUS = 1.65;
 const MAX_DPR = 1.5;
 const EARTH_TEXTURE_8K_URL = `${import.meta.env.BASE_URL}textures/earth-day-8192.webp`;
 const EARTH_TEXTURE_4K_URL = `${import.meta.env.BASE_URL}textures/earth-day-4096.webp`;
-const BUMP_TEXTURE_URL = `${import.meta.env.BASE_URL}textures/earth-bump-2048.webp`;
 const CLOUD_TEXTURE_4K_URL = `${import.meta.env.BASE_URL}textures/earth-clouds-alpha-4096.webp`;
 
 function createEarthFallbackTexture(): THREE.CanvasTexture {
@@ -340,9 +339,9 @@ export function ThreeGlobeView({
     const stars = createStarfield();
     scene.add(stars);
 
-    scene.add(new THREE.AmbientLight("#42677A", 0.56));
+    scene.add(new THREE.AmbientLight(0x333333, 1));
     const sun = new THREE.DirectionalLight("#FFF1D5", 3.1);
-    sun.position.set(-4, 2.5, 5);
+    sun.position.set(5, 3, 5);
     scene.add(sun);
     const flare = createLensFlare(sun.position.clone().normalize().multiplyScalar(EARTH_RADIUS * 1.28));
     scene.add(flare);
@@ -361,10 +360,9 @@ export function ThreeGlobeView({
 
     const loader = new THREE.TextureLoader();
     let isDisposed = false;
-    const earthMaterial = new THREE.MeshPhongMaterial({
+    const earthMaterial = new THREE.MeshBasicMaterial({
       map: createEarthFallbackTexture(),
-      shininess: 9,
-      specular: new THREE.Color("#6ca9c6")
+      toneMapped: false
     });
     const fallbackTexture = earthMaterial.map;
     const maxTextureSize = renderer.capabilities.maxTextureSize;
@@ -381,19 +379,6 @@ export function ThreeGlobeView({
       earthMaterial.map = texture;
       earthMaterial.needsUpdate = true;
       fallbackTexture?.dispose();
-    });
-    const bumpTexture = loader.load(BUMP_TEXTURE_URL, (texture) => {
-      if (isDisposed) {
-        texture.dispose();
-        return;
-      }
-      texture.colorSpace = THREE.NoColorSpace;
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.offset.x = 0.25;
-      texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
-      earthMaterial.bumpMap = texture;
-      earthMaterial.bumpScale = 0.045;
-      earthMaterial.needsUpdate = true;
     });
     const earth = new THREE.Mesh(
       new THREE.SphereGeometry(EARTH_RADIUS, 96, 64),
@@ -492,7 +477,6 @@ export function ThreeGlobeView({
       }
       earth.geometry.dispose();
       earthTexture.dispose();
-      bumpTexture.dispose();
       earthMaterial.map?.dispose();
       earthMaterial.dispose();
       clouds.geometry.dispose();
