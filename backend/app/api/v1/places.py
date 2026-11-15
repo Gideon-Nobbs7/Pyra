@@ -9,7 +9,31 @@ log = logging.getLogger("pyra.places")
 
 PHOTON_HOST = "photon.komoot.io"
 PHOTON_URL = f"https://{PHOTON_HOST}/api/"
-TIMEOUT_S = 8.0
+
+_client: httpx.AsyncClient | None = None
+
+
+def _shared_client() -> httpx.AsyncClient:
+    """Pooled keep-alive client. One TLS handshake, then sub-second repeats."""
+    global _client
+    if _client is None:
+        _client = httpx.AsyncClient(
+            timeout=httpx.Timeout(8.0, connect=3.0),
+            headers={"User-Agent": "Pyra/0.1"},
+        )
+    return _client
+
+
+async def close_client() -> None:
+    """Lifespan shutdown hook. Safe to call when never started."""
+    global _client
+    if _client is not None:
+        await _client.aclose()
+        _client = None
+
+
+async def _fetch(params: dict) -> httpx.Response:
+    return await _shared_client().get(PHOTON_URL, params=params)
 
 
 def _error(code: str, message: str, status: int) -> JSONResponse:
@@ -77,12 +101,7 @@ async def search_places(request: Request) -> JSONResponse:
         return _error("invalid_params", "lang must be a 2-letter code", 422)
 
     try:
-        response = httpx.get(
-            PHOTON_URL,
-            params={"q": query, "limit": str(limit), "lang": lang},
-            timeout=TIMEOUT_S,
-            headers={"User-Agent": "Pyra/0.1"},
-        )
+        response = await _fetch({"q": query, "limit": str(limit), "lang": lang})
     except Exception as exc:
         log.warning("place search provider unreachable: %s", exc)
         return _error(

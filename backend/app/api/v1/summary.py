@@ -71,9 +71,6 @@ GROUP BY 1 ORDER BY 1
 def _buckets_from_db(
     start_iso: str, end_iso: str, bbox: list[float], products: list[str], interval: str
 ) -> tuple[list[dict], int]:
-    import psycopg
-    import psycopg.rows
-
     url, _ = db.resolve_database_url()
     params = {
         "interval": interval,
@@ -85,9 +82,7 @@ def _buckets_from_db(
         "max_lat": bbox[3],
         "products": products,
     }
-    with psycopg.connect(
-        url, connect_timeout=3, prepare_threshold=None, row_factory=psycopg.rows.dict_row
-    ) as conn:
+    with db._try_connect(url) as conn:
         with conn.cursor() as cur:
             cur.execute(BUCKET_SQL, params)
             rows = cur.fetchall()

@@ -35,13 +35,13 @@ PHOTON_OK = {
 def _mock_get(monkeypatch, response=None, error=None):
     calls = []
 
-    def fake_get(url, params=None, timeout=None, headers=None):
-        calls.append({"url": url, "params": params})
+    async def fake_fetch(params):
+        calls.append({"url": places_lib.PHOTON_URL, "params": params})
         if error is not None:
             raise error
         return response
 
-    monkeypatch.setattr(places_lib.httpx, "get", fake_get)
+    monkeypatch.setattr(places_lib, "_fetch", fake_fetch)
     return calls
 
 
@@ -92,6 +92,16 @@ def test_places_provider_http_error_is_503(monkeypatch):
     _mock_get(monkeypatch, FakeResponse(500, {}))
     r = get_client().get("/api/v1/places", params={"q": "Tamale"})
     assert r.status_code == 503
+
+
+def test_shared_client_is_reused():
+    first = places_lib._shared_client()
+    try:
+        assert places_lib._shared_client() is first
+    finally:
+        import asyncio
+
+        asyncio.run(places_lib.close_client())
 
 
 def test_places_bad_shape_is_503(monkeypatch):

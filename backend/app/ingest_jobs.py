@@ -56,13 +56,8 @@ WHERE id = %(id)s;
 
 
 def _connect(url):
-    import psycopg
-    import psycopg.rows
-
     # pooler-safe: no server-side prepared statements.
-    return psycopg.connect(
-        url, connect_timeout=5, prepare_threshold=None, row_factory=psycopg.rows.dict_row
-    )
+    return db_module._try_connect(url)
 
 
 def _rounded(bbox: list[float]) -> list[float]:

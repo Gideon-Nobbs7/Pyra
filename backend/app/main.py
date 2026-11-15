@@ -20,6 +20,7 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
     """
     task = None
     try:
+        from app import db as db_module
         from app.settings import get_settings
         from scripts import ingest_worker
 
@@ -34,6 +35,14 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
             if value
         )
         log.info("database tiers configured: %s", configured or "none (fixture mode)")
+        if configured:
+            try:
+                url, role = await asyncio.to_thread(db_module.resolve_database_url)
+                pool = await asyncio.to_thread(db_module.get_pool, url, role)
+                await asyncio.to_thread(pool.wait, 30.0)
+                log.info("connection pool warmed (%s, stats=%s)", role, pool.get_stats())
+            except Exception as exc:
+                log.warning("connection pool warmup failed: %s", exc)
         if settings.worker_enabled:
             areas = ingest_worker.parse_watch_bboxes(settings.watch_bboxes)
             task = asyncio.create_task(
@@ -57,6 +66,18 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
 
         ingest_worker.request_stop()
         await task
+    try:
+        from app.api.v1 import places
+
+        await places.close_client()
+    except Exception as exc:
+        log.warning("place search client did not close: %s", exc)
+    try:
+        from app import db as db_module
+
+        db_module.close_pools()
+    except Exception:
+        pass
 
 
 app = FastAPI(title="Pyra", version="0.1.0", lifespan=lifespan)

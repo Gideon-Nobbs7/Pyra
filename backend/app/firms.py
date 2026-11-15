@@ -51,16 +51,16 @@ _last_provider_call = 0.0
 
 UPSERT_SQL = """
 INSERT INTO observations
-  (id, source, source_record_id, observed_at, ingested_at,
-   latitude, longitude, geom,
-   instrument, platform, confidence, frp, frp_unit,
-   quality_flags, product_version, raw_properties)
-VALUES
-  (%(id)s, %(source)s, %(source_record_id)s, %(observed_at)s, %(ingested_at)s,
-   %(latitude)s, %(longitude)s,
-   ST_SetSRID(ST_MakePoint(%(longitude)s, %(latitude)s), 4326)::geography,
-   %(instrument)s, %(platform)s, %(confidence)s, %(frp)s, %(frp_unit)s,
-   %(quality_flags)s, %(product_version)s, %(raw_properties)s)
+   (id, source, source_record_id, observed_at, ingested_at,
+    latitude, longitude, geom,
+    instrument, platform, confidence, frp, frp_unit,
+    quality_flags, product_version, raw_properties, event_key)
+ VALUES
+   (%(id)s, %(source)s, %(source_record_id)s, %(observed_at)s, %(ingested_at)s,
+    %(latitude)s, %(longitude)s,
+    ST_SetSRID(ST_MakePoint(%(longitude)s, %(latitude)s), 4326)::geography,
+    %(instrument)s, %(platform)s, %(confidence)s, %(frp)s, %(frp_unit)s,
+    %(quality_flags)s, %(product_version)s, %(raw_properties)s, %(event_key)s)
 ON CONFLICT (source, source_record_id) DO UPDATE SET
   observed_at = EXCLUDED.observed_at,
   ingested_at = EXCLUDED.ingested_at,
@@ -73,8 +73,9 @@ ON CONFLICT (source, source_record_id) DO UPDATE SET
   frp = EXCLUDED.frp,
   frp_unit = EXCLUDED.frp_unit,
   quality_flags = EXCLUDED.quality_flags,
-  product_version = EXCLUDED.product_version,
-  raw_properties = EXCLUDED.raw_properties
+   product_version = EXCLUDED.product_version,
+   raw_properties = EXCLUDED.raw_properties,
+   event_key = EXCLUDED.event_key
 """
 
 
@@ -204,6 +205,17 @@ def synth_source_record_id(
     return hashlib.sha1(basis.encode()).hexdigest()
 
 
+def event_key_for(lat: float, lon: float, observed_at: datetime) -> str:
+    """Shared fire-event key: ~1 km cell + UTC day, across sensors.
+
+    Twins from MODIS and VIIRS for the same fire get the same key while each
+    row keeps its own id, provenance, and measurements. Mirrors the frontend
+    corroboration cell rule. Naive datetimes are treated as UTC (the ingest
+    path normalizes to UTC before harmonizing).
+    """
+    return f"{lat:.2f},{lon:.2f},{observed_at.date().isoformat()}"
+
+
 def harmonize(parsed: dict, source: str, ingested_at: datetime) -> dict:
     """Map one parsed FIRMS row onto the harmonized observation record."""
     raw = parsed["raw"]
@@ -247,6 +259,7 @@ def harmonize(parsed: dict, source: str, ingested_at: datetime) -> dict:
         "id": f"{source}-{source_record_id[:16]}",
         "source": source,
         "source_record_id": source_record_id,
+        "event_key": event_key_for(parsed["latitude"], parsed["longitude"], parsed["observed_at"]),
         "observed_at": parsed["observed_at"],
         "ingested_at": ingested_at,
         "latitude": parsed["latitude"],
@@ -284,15 +297,14 @@ def prepare_records(
 
 
 def upsert_records(records: list[dict], database_url: str) -> int:
-    import psycopg
+    from app import db as db_module
 
     if not records:
         return 0
-    # prepare_threshold=None: pooler-safe (no server-side prepared statements).
-    with psycopg.connect(database_url, connect_timeout=10, prepare_threshold=None) as conn:
+    # Pooled write: same pooler-safe kwargs as reads (no prepared statements).
+    with db_module.get_pool(database_url, role="ingest").connection() as conn:
         with conn.cursor() as cur:
             cur.executemany(UPSERT_SQL, records)
-        conn.commit()
     log.info("upserted %d records", len(records))
     return len(records)
 

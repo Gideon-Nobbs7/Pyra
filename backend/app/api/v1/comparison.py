@@ -146,9 +146,6 @@ async def comparison(request: Request) -> JSONResponse:
 
     if db.db_configured():
         try:
-            import psycopg
-            import psycopg.rows
-
             url, _ = db.resolve_database_url()
             base = {
                 "min_lon": min_lon,
@@ -157,9 +154,7 @@ async def comparison(request: Request) -> JSONResponse:
                 "max_lat": max_lat,
                 "products": products,
             }
-            with psycopg.connect(
-                url, connect_timeout=3, prepare_threshold=None, row_factory=psycopg.rows.dict_row
-            ) as conn:
+            with db._try_connect(url) as conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         COUNT_SQL, {**base, "start": start.isoformat(), "end": end.isoformat()}

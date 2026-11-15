@@ -25,6 +25,11 @@ CREATE INDEX IF NOT EXISTS idx_observations_observed_at ON observations (observe
 CREATE INDEX IF NOT EXISTS idx_observations_geom ON observations USING GIST (geom);
 CREATE INDEX IF NOT EXISTS idx_observations_source ON observations (source);
 
+-- Shared fire-event key (Phase 1: link cross-sensor twins, keep both rows).
+-- Nullable so pre-key rows keep working; event counts coalesce NULL to id.
+ALTER TABLE observations ADD COLUMN IF NOT EXISTS event_key TEXT;
+CREATE INDEX IF NOT EXISTS idx_observations_event_key ON observations (event_key);
+
 -- Gap-fill job queue: user query bboxes the store cannot serve yet.
 -- The API enqueues on a stored-data miss; the worker claims oldest-first.
 -- Rerunnable: IF NOT EXISTS throughout.

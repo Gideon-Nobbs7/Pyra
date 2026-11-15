@@ -11,6 +11,7 @@ presented as equally fresh. Fixtures serve only when no store is configured
 empty.
 """
 
+import threading
 import time
 
 from app.settings import get_settings
@@ -30,7 +31,7 @@ OBSERVATIONS_SQL = """
 SELECT id, source, source_record_id, observed_at, ingested_at,
        latitude, longitude,
        instrument, platform, confidence, frp, frp_unit,
-       quality_flags, product_version, raw_properties
+       quality_flags, product_version, raw_properties, event_key
 FROM observations
 WHERE observed_at >= %(start)s
   AND observed_at < %(end)s
@@ -76,15 +77,112 @@ def reset_resolution() -> None:
     _ACTIVE.update({"url": None, "role": None, "ts": 0.0})
 
 
-def _try_connect(url: str, timeout: int = 3):
-    import psycopg
-    import psycopg.rows
+def _connect_timeout(timeout: int | None = None) -> int:
+    """Single timeout for all Postgres connects (Supabase pooler needs headroom).
 
-    # prepare_threshold=None: no server-side prepared statements, so the
-    # connection also works through Supavisor/pgbouncer transaction pooling.
-    return psycopg.connect(
-        url, connect_timeout=timeout, row_factory=psycopg.rows.dict_row, prepare_threshold=None
+    Measured handshakes from this network are 2-7 s; the old 3 s default
+    flaked into 503s. Override with DATABASE_CONNECT_TIMEOUT.
+    """
+    if timeout is not None:
+        return timeout
+    try:
+        return int(get_settings().database_connect_timeout)
+    except Exception:
+        return 12
+
+
+_POOLS: dict = {}
+_POOLS_LOCK = threading.Lock()
+
+
+def _pool_limits() -> tuple[int, int, float]:
+    """(min_size, max_size, acquire_timeout_s) from settings, clamped sane."""
+    try:
+        settings = get_settings()
+        min_size = max(1, int(settings.database_pool_min_size))
+        max_size = max(min_size, int(settings.database_pool_max_size))
+        acquire = float(settings.database_pool_timeout)
+    except Exception:
+        min_size, max_size, acquire = 1, 5, 10.0
+    return min_size, max_size, acquire
+
+
+def get_pool(url: str, role: str = "query"):
+    """Borrow-or-create the ConnectionPool for one tier (thread-safe, lazy).
+
+    One pool per tier URL; min_size connections stay warm so repeat queries
+    skip the 2-7 s Supabase handshake. prepare_threshold=None keeps the pool
+    working through Supavisor/pgbouncer transaction pooling.
+    """
+    with _POOLS_LOCK:
+        pool = _POOLS.get(url)
+        if pool is not None and not pool.closed:
+            return pool
+    import psycopg.rows
+    from psycopg_pool import ConnectionPool
+
+    min_size, max_size, acquire = _pool_limits()
+    pool = ConnectionPool(
+        conninfo=url,
+        open=True,
+        min_size=min_size,
+        max_size=max_size,
+        timeout=acquire,
+        kwargs={
+            "connect_timeout": _connect_timeout(),
+            "row_factory": psycopg.rows.dict_row,
+            "prepare_threshold": None,
+        },
+        check=ConnectionPool.check_connection,
+        name=f"pyra-{role}",
     )
+    with _POOLS_LOCK:
+        existing = _POOLS.get(url)
+        if existing is not None and not existing.closed:
+            pool.close()
+            return existing
+        _POOLS[url] = pool
+        return pool
+
+
+def close_pools() -> None:
+    """Shutdown hook + tests: close every pooled tier."""
+    with _POOLS_LOCK:
+        pools = list(_POOLS.values())
+        _POOLS.clear()
+    for pool in pools:
+        try:
+            pool.close()
+        except Exception:
+            pass
+
+
+def pool_stats() -> dict:
+    """Per-tier pool usage for health/logs. Never raises."""
+    stats = {}
+    with _POOLS_LOCK:
+        items = list(_POOLS.items())
+    for url, pool in items:
+        try:
+            info = pool.get_stats()
+        except Exception:
+            info = {}
+        tail = url.split("@")[-1][:60] if "@" in url else url[:60]
+        stats[tail] = info
+    return stats
+
+
+def _try_connect(url: str, timeout: int | None = None):
+    """Pooled connection context (same `with` shape as before).
+
+    The pool per tier keeps min_size warm connections, so repeat queries
+    skip the handshake. `timeout` overrides the pool acquire wait.
+    Tests may keep patching this seam with a fake connection.
+    """
+    pool = get_pool(url)
+    if timeout is not None:
+        return pool.connection(timeout=float(timeout))
+    return pool.connection()
 
 
 def resolve_database_url() -> tuple[str, str]:
@@ -104,8 +202,9 @@ def resolve_database_url() -> tuple[str, str]:
     last_exc: Exception | None = None
     for url, role in candidates:
         try:
-            conn = _try_connect(url)
-            conn.close()
+            with _try_connect(url) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT 1")
             _ACTIVE.update({"url": url, "role": role, "ts": now})
             return url, role
         except Exception as exc:  # noqa: BLE001 (probe next candidate, log at call site)
