@@ -26,7 +26,7 @@ Metadata: `GET /api/v1/metadata`
 
 ## Env
 
-See `../.env.example` (root). `DATABASE_URL` unset means `database: not_configured` and fixtures serve reads. Once PostGIS is up, copy root `.env.example` to `.env`, set values, and export it before running the API.
+See `../.env.example` (root). `DATABASE_URL` unset means `database: not_configured` and fixtures serve reads. Once PostGIS is up, copy root `.env.example` to `.env` and set values. The API and worker auto-load root `.env` via `app/settings.py` (real env vars still win); the older `ingest_firms.py` / `refresh_nrt.sh` scripts still need it exported (`set -a; source ../.env; set +a`).
 
 Tiered stores: `DATABASE_URL` is primary (Cloud SQL), `DATABASE_URL_FALLBACK`
 Supabase second, `DATABASE_URL_LOCAL` local Compose last. Reads fail over down
@@ -77,6 +77,35 @@ Background refresh (same command cron/systemd can own; `--check` gates the inges
 `NRT_BBOX` env overrides the default Ghana bbox. Restart the API process after
 a successful refresh so the in-process cache drops.
 
+## Background worker (rolling ingest + user gap-fill)
+
+Set `WORKER_ENABLED=1` in root `.env`: the API lifespan starts the worker
+in a thread, so one `uvicorn` owns both — stopping/restarting the server
+stops/restarts the worker. Standalone runs still work for cron/manual use:
+
+```bash
+# one tick over every watch area, then exit (cron-friendly)
+uv run python scripts/ingest_worker.py --once
+# long-running daemon: ticks every WORKER_INTERVAL_S (default 3600, min 60)
+WATCH_BBOXES="Tamale:-2.2,8.05,0.52,10.75;Ghana:-3.3,4.5,1.2,11.2" uv run python scripts/ingest_worker.py
+# single window, routed automatically (recent+small → FIRMS tail, else EE raster)
+uv run python scripts/ingest_window.py --bbox=-3.3,4.5,1.2,11.2 --start 2024-08-10 --end 2024-08-17
+```
+
+`WATCH_BBOXES` (or `--watch`, same format) also lives in root `.env`.
+Each tick ingests the recent window per area and then claims user gap-fill
+jobs oldest-first (up to `WORKER_MAX_JOBS`, default 3). A gap-fill job is
+enqueued automatically when a query's locked bbox + window has no stored
+data and the synchronous path cannot cover it (history or areas over
+50 deg², capped at 500 deg² / 366 days). Jobs are deduped per rounded bbox
++ window, retried to 5 attempts, and run through `ingest_window` into
+whichever tier answers (primary → fallback → local). Nothing new appears
+in the UI; freshness timestamps prove the fill.
+
+First run on an existing database: `psql $DATABASE_URL -f schema.sql`
+adds the rerunnable `ingest_jobs` table. Worker-written rows are picked up
+through the normal cache TTL (60 s recent) — no API restart needed.
+
 ## Read path (cache → DB → bounded live fetch)
 
 1. In-process cache hit → return (no DB, no provider).
@@ -90,8 +119,16 @@ a successful refresh so the in-process cache drops.
 History is never fetched live; it arrives via archive ingest. Concurrent
 identical queries coalesce on the per-key single-flight lock.
 
-After ingest, restart the API process so the in-process cache drops. Method,
-field mapping, and the synthesized record-ID rule live in `docs/harmonization.md`.
+Cache backend: `functools.lru_cache` inside `app/cache.py` (`LruCacheBackend`,
+selected by `CACHE_BACKEND`, default `lru`). To swap it (Redis, second process,
+no-op for tests), implement the `CacheBackend` protocol and add a branch to
+`build_cache()` — callers only use `get`/`put`/`invalidate`/`stats`, so nothing
+else changes. Watch it working via `cache.stats()["lru"]` (hits/misses/currsize).
+
+After a direct ingest (scripts, `refresh_nrt.sh`), restart the API process so
+the in-process cache drops. Worker-written rows need no restart (short TTL).
+Method, field mapping, and the synthesized record-ID rule live in
+`docs/harmonization.md`.
 
 ## Checks
 

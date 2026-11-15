@@ -28,11 +28,13 @@ export type ObservationQuery = {
   products?: Array<"modis" | "viirs">;
   limit?: number;
   cursor?: string;
+  live?: boolean;
 };
 
 export type ResponseContext = {
   filters: ObservationQuery;
   coverage: { start: string | null; end: string | null; available: boolean };
+  coverage_reason?: string | null;
   freshness: { fetched_at: string; latest_ingested_at: string | null };
 };
 

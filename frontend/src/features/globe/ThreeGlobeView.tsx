@@ -7,7 +7,45 @@ const EARTH_RADIUS = 1.65;
 const MAX_DPR = 1.5;
 const EARTH_TEXTURE_8K_URL = `${import.meta.env.BASE_URL}textures/earth-day-8192.webp`;
 const EARTH_TEXTURE_4K_URL = `${import.meta.env.BASE_URL}textures/earth-day-4096.webp`;
+const NIGHT_TEXTURE_4K_URL = `${import.meta.env.BASE_URL}textures/earth-night-4096.jpg`;
 const CLOUD_TEXTURE_4K_URL = `${import.meta.env.BASE_URL}textures/earth-clouds-alpha-4096.webp`;
+
+/**
+ * The night-earth texture is a dark blue-tinted landmass map whose city lights
+ * are faint. Isolate the warm lights onto black so the night-side shader can
+ * show them instead of the blue wash.
+ */
+function extractCityLightsTexture(image: HTMLImageElement): THREE.CanvasTexture {
+  const width = image.naturalWidth || image.width;
+  const height = image.naturalHeight || image.height;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) {
+    throw new Error("Unable to extract city lights: no 2D canvas context.");
+  }
+  context.drawImage(image, 0, 0);
+  const pixels = context.getImageData(0, 0, width, height);
+  const data = pixels.data;
+  for (let index = 0; index < data.length; index += 4) {
+    const r = data[index];
+    const g = data[index + 1];
+    const b = data[index + 2];
+    // City lights burn warm; the base map wash is blue. Pixels with no warm
+    // excess go pure black so oceans stay dark on the night side.
+    const warmth = Math.max(0, (r - b + (g - b)) / 2 / 255);
+    const mask = Math.pow(warmth, 0.65) * 3.2;
+    data[index] = Math.min(255, r * mask);
+    data[index + 1] = Math.min(255, g * mask);
+    data[index + 2] = Math.min(255, b * mask * 0.4);
+  }
+  context.putImageData(pixels, 0, 0);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  return texture;
+}
 
 function createEarthFallbackTexture(): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
@@ -242,10 +280,23 @@ function createObservationPoints(
   const positions = observations.map(observationPosition);
   const colors = new Float32Array(positions.length * 3);
   const color = new THREE.Color();
+  const ember = new THREE.Color("#c21607");
+  const flame = new THREE.Color("#ff6a1a");
+  const core = new THREE.Color("#ffd23f");
+  const selectedColor = new THREE.Color("#fff6d8");
 
   observations.forEach((observation, index) => {
     const selected = observation.id === selectedObservationId;
-    color.set(selected ? "#ffd2a8" : observation.source === "modis" ? "#4fd1a5" : "#f4a261");
+    if (selected) {
+      color.copy(selectedColor);
+    } else {
+      // FRP-scaled fire ramp: ember red -> flame orange -> hot yellow core.
+      // Missing FRP renders as mid-flame orange, never as zero.
+      const frp = typeof observation.frp === "number" && Number.isFinite(observation.frp) ? observation.frp : 12;
+      const heat = Math.max(0, Math.min(1, Math.log10(1 + Math.max(0, frp)) / 2));
+      if (heat < 0.5) color.copy(ember).lerp(flame, heat * 2);
+      else color.copy(flame).lerp(core, (heat - 0.5) * 2);
+    }
     colors[index * 3] = color.r;
     colors[index * 3 + 1] = color.g;
     colors[index * 3 + 2] = color.b;
@@ -498,7 +549,9 @@ export function ThreeGlobeView({
   selectedObservationId,
   onSelectObservation,
   zoomRequest,
-  resetRequestId
+  resetRequestId,
+  flyTo,
+  onReady
 }: GlobeViewProps) {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const globeGroupRef = useRef<THREE.Group | null>(null);
@@ -508,6 +561,10 @@ export function ThreeGlobeView({
   const observationIdsRef = useRef<string[]>([]);
   const lastZoomRequestRef = useRef(0);
   const lastResetRequestRef = useRef(0);
+  const lastFlyToRequestRef = useRef(0);
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
+  const readyFiredRef = useRef(false);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -561,11 +618,46 @@ export function ThreeGlobeView({
 
     const loader = new THREE.TextureLoader();
     let isDisposed = false;
-    const earthMaterial = new THREE.MeshBasicMaterial({
-      map: createEarthFallbackTexture(),
-      toneMapped: false
+    const blackPixel = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1);
+    blackPixel.needsUpdate = true;
+    const earthUniforms = {
+      dayMap: { value: createEarthFallbackTexture() as THREE.Texture },
+      nightMap: { value: blackPixel as THREE.Texture },
+      sunDirection: { value: new THREE.Vector3(5, 3, 5).normalize() },
+      uvOffset: { value: 0.25 }
+    };
+    const earthMaterial = new THREE.ShaderMaterial({
+      uniforms: earthUniforms,
+      vertexShader: /* glsl */ `
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        void main() {
+          vUv = uv;
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        uniform sampler2D dayMap;
+        uniform sampler2D nightMap;
+        uniform vec3 sunDirection;
+        uniform float uvOffset;
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        void main() {
+          vec2 uv = vec2(fract(vUv.x + uvOffset), vUv.y);
+          float ndl = dot(normalize(vNormal), normalize(sunDirection));
+          float dayMix = smoothstep(-0.12, 0.28, ndl);
+          vec3 dayCol = texture2D(dayMap, uv).rgb;
+          vec3 nightCol = texture2D(nightMap, uv).rgb;
+          vec3 nightBase = dayCol * 0.02 + vec3(0.002, 0.004, 0.01);
+          vec3 col = mix(nightBase + nightCol * 2.0, dayCol, dayMix);
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `
     });
-    const fallbackTexture = earthMaterial.map;
+    earthMaterial.toneMapped = false;
+    const fallbackTexture = earthUniforms.dayMap.value;
     const maxTextureSize = renderer.capabilities.maxTextureSize;
     const earthTextureUrl = maxTextureSize >= 8192 ? EARTH_TEXTURE_8K_URL : EARTH_TEXTURE_4K_URL;
     const earthTexture = loader.load(earthTextureUrl, (texture) => {
@@ -575,12 +667,36 @@ export function ThreeGlobeView({
       }
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.wrapS = THREE.RepeatWrapping;
-      texture.offset.x = 0.25;
       texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-      earthMaterial.map = texture;
-      earthMaterial.needsUpdate = true;
+      earthUniforms.dayMap.value = texture;
       fallbackTexture?.dispose();
     });
+    let nightLightsTexture: THREE.Texture | null = null;
+    const nightTexture = loader.load(
+      NIGHT_TEXTURE_4K_URL,
+      (texture) => {
+        if (isDisposed) {
+          texture.dispose();
+          return;
+        }
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.wrapS = THREE.RepeatWrapping;
+        try {
+          nightLightsTexture = extractCityLightsTexture(texture.image as HTMLImageElement);
+          nightLightsTexture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+          earthUniforms.nightMap.value = nightLightsTexture;
+          texture.dispose();
+        } catch {
+          // Fall back to the raw night map rather than losing the night side.
+          earthUniforms.nightMap.value = texture;
+        }
+        blackPixel.dispose();
+      },
+      undefined,
+      () => {
+        // Night texture missing: the terminator still darkens the day side.
+      }
+    );
     const earth = new THREE.Mesh(
       new THREE.SphereGeometry(EARTH_RADIUS, 96, 64),
       earthMaterial
@@ -682,12 +798,19 @@ export function ThreeGlobeView({
     renderer.domElement.addEventListener("pointerup", onPointerUp);
 
     let animationFrame = 0;
+    const sunViewDirection = new THREE.Vector3();
     const render = () => {
       controls.update();
       clouds.rotation.y += 0.00015;
       orbitObject.rotation.y += 0.005;
       orbitObject.rotation.x += 0.001;
+      sunViewDirection.copy(sun.position).transformDirection(camera.matrixWorldInverse);
+      earthUniforms.sunDirection.value.copy(sunViewDirection);
       renderer.render(scene, camera);
+      if (!readyFiredRef.current) {
+        readyFiredRef.current = true;
+        onReadyRef.current?.();
+      }
       animationFrame = requestAnimationFrame(render);
     };
     render();
@@ -707,7 +830,10 @@ export function ThreeGlobeView({
       }
       earth.geometry.dispose();
       earthTexture.dispose();
-      earthMaterial.map?.dispose();
+      nightTexture.dispose();
+      nightLightsTexture?.dispose();
+      blackPixel.dispose();
+      (earthUniforms.dayMap.value as THREE.Texture)?.dispose?.();
       earthMaterial.dispose();
       clouds.geometry.dispose();
       cloudTexture.dispose();
@@ -778,6 +904,23 @@ export function ThreeGlobeView({
     controls.update();
     lastResetRequestRef.current = resetRequestId;
   }, [resetRequestId]);
+
+  useEffect(() => {
+    const globeGroup = globeGroupRef.current;
+    const controls = controlsRef.current;
+    if (!globeGroup || !controls || !flyTo || flyTo.requestId === lastFlyToRequestRef.current) return;
+    const lat = THREE.MathUtils.degToRad(Math.max(-90, Math.min(90, flyTo.lat)));
+    const lon = THREE.MathUtils.degToRad(((flyTo.lon + 540) % 360) - 180);
+    const direction = new THREE.Vector3(
+      Math.cos(lat) * Math.sin(lon),
+      Math.sin(lat),
+      Math.cos(lat) * Math.cos(lon)
+    );
+    globeGroup.quaternion.setFromUnitVectors(direction, new THREE.Vector3(0, 0, 1));
+    controls.object.position.setLength(THREE.MathUtils.clamp(3.1, controls.minDistance, controls.maxDistance));
+    controls.update();
+    lastFlyToRequestRef.current = flyTo.requestId;
+  }, [flyTo]);
 
   return null;
 }

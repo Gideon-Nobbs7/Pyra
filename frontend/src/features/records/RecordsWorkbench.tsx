@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { Observation } from "../../api/types";
 import type { QuerySelection } from "../../query/useSnapshotQuery";
 import { ExportTools } from "../export/ExportTools";
-import { getCorroboration, getObservationPass } from "../details/ObservationDetails";
+import { buildCorroborationMap, getObservationPass, resolveCorroboration } from "../details/ObservationDetails";
 import { ObservationDetails } from "../details/ObservationDetails";
 
 type Sensor = "all" | "modis" | "viirs";
@@ -34,9 +34,10 @@ export function RecordsWorkbench({ observations, selectedId, onSelect, query, re
   const [search, setSearch] = useState("");
 
   const confidenceOptions = useMemo(() => [...new Set(observations.map((item) => item.confidence === null ? "not provided" : String(item.confidence)))].sort(), [observations]);
+  const corroborationMap = useMemo(() => buildCorroborationMap(observations), [observations]);
   const filtered = useMemo(() => observations.filter((item) => {
     const itemPass = getObservationPass(item);
-    const itemCorroboration = getCorroboration(item);
+    const itemCorroboration = resolveCorroboration(item, corroborationMap);
     const confidenceText = item.confidence === null ? "not provided" : String(item.confidence);
     const matchesSearch = !search || `${item.id} ${item.platform ?? ""} ${item.instrument ?? ""}`.toLowerCase().includes(search.toLowerCase());
     return (sensor === "all" || item.source === sensor) &&
@@ -50,7 +51,7 @@ export function RecordsWorkbench({ observations, selectedId, onSelect, query, re
     if (a.frp === null) return b.frp === null ? 0 : 1;
     if (b.frp === null) return -1;
     return b.frp - a.frp;
-  }), [observations, sensor, pass, confidence, corroboration, sort, search]);
+  }), [observations, sensor, pass, confidence, corroboration, corroborationMap, sort, search]);
 
   const selected = observations.find(({ id }) => id === selectedId) ?? null;
   return (
@@ -63,10 +64,11 @@ export function RecordsWorkbench({ observations, selectedId, onSelect, query, re
         <label>Sensor<select value={sensor} onChange={(event) => setSensor(event.currentTarget.value as Sensor)}><option value="all">All sensors</option><option value="modis">MODIS</option><option value="viirs">VIIRS</option></select></label>
         <label>Pass<select value={pass} onChange={(event) => setPass(event.currentTarget.value as Pass)}><option value="all">All passes</option><option value="Day">Day</option><option value="Night">Night</option><option value="not-provided">Not provided</option></select></label>
         <label>Confidence<select value={confidence} onChange={(event) => setConfidence(event.currentTarget.value)}><option value="all">All confidence values</option>{confidenceOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
-        <label>Cross-sensor corroboration<select value={corroboration} onChange={(event) => setCorroboration(event.currentTarget.value as CorroborationFilter)}><option value="all">All</option><option value="yes">Corroborated</option><option value="no">Not corroborated</option><option value="not-provided">Not provided</option></select></label>
+        <label title="Corroborated means both MODIS and VIIRS saw the same cell on the same day">Cross-sensor corroboration<select value={corroboration} onChange={(event) => setCorroboration(event.currentTarget.value as CorroborationFilter)}><option value="all">All</option><option value="yes">Corroborated</option><option value="no">Not corroborated</option><option value="not-provided">Not provided</option></select></label>
         <label>Sort by<select value={sort} onChange={(event) => setSort(event.currentTarget.value as Sort)}><option value="time">Observation time</option><option value="frp">Peak FRP</option><option value="sensor">Sensor</option></select></label>
         <label>Find record<input type="search" value={search} onChange={(event) => setSearch(event.currentTarget.value)} placeholder="ID, platform, instrument" /></label>
       </div>
+      <p className="muted">Corroborated means both MODIS and VIIRS saw the same cell on the same day — stronger evidence of a real hotspot.</p>
       <div className="records-table-wrap">
         <table className="records-table">
           <caption>Satellite hotspot observations matching the active filters</caption>
@@ -80,7 +82,7 @@ export function RecordsWorkbench({ observations, selectedId, onSelect, query, re
               <td>{textValue(item.ingested_at)}</td>
               <td>{textValue(item.confidence)}</td>
               <td>{item.frp === null ? "not provided" : `${item.frp} ${textValue(item.frp_unit)}`}</td>
-              <td>{corroborationLabel(getCorroboration(item))}</td>
+              <td>{corroborationLabel(resolveCorroboration(item, corroborationMap))}</td>
             </tr>)}
             {!filtered.length && <tr><td className="records-empty" colSpan={8}>No loaded observations match these filters.</td></tr>}
           </tbody>
@@ -88,7 +90,7 @@ export function RecordsWorkbench({ observations, selectedId, onSelect, query, re
       </div>
       <section className="record-inspector" aria-labelledby="record-inspector-heading">
         <h2 id="record-inspector-heading">Observation details</h2>
-        <ObservationDetails observation={selected} />
+        <ObservationDetails observation={selected} corroborated={selected ? resolveCorroboration(selected, corroborationMap) : null} />
       </section>
       <ExportTools observations={filtered} query={query} retrievedAt={retrievedAt} synthetic={synthetic} activeFilters={{ sensor, pass, confidence, corroboration, sort, search: search || "none" }} />
     </section>

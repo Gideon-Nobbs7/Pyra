@@ -12,7 +12,7 @@ function csvCell(value: unknown): string {
 
 function csvFor(observations: Observation[], query: QuerySelection, retrievedAt: string | null, synthetic: boolean, activeFilters: ActiveFilters): string {
   const metadata = [
-    "# metadata: FireWatch observation export",
+    "# metadata: Pyra observation export",
     "# source: NASA FIRMS MODIS and VIIRS active fire detections",
     `# area: ${query.areaLabel}`,
     `# center_latitude: ${query.center.lat}`,
@@ -47,14 +47,14 @@ export function ExportTools({ observations, query, retrievedAt, synthetic, activ
   activeFilters?: ActiveFilters;
 }) {
   const [message, setMessage] = useState("");
-  const citation = `FireWatch · NASA FIRMS MODIS/VIIRS active-fire observations (https://firms.modaps.eosdis.nasa.gov/). Area: ${query.areaLabel} (${query.center.lat}, ${query.center.lon}; ${query.radiusKm} km). Period: ${query.start} to ${query.end} UTC. Products: ${query.products.join(", ")}. Retrieval: ${retrievedAt ?? "not provided"}.${synthetic ? " Synthetic fixture data." : ""}`;
+  const citation = `Pyra · NASA FIRMS MODIS/VIIRS active-fire observations (https://firms.modaps.eosdis.nasa.gov/). Area: ${query.areaLabel} (${query.center.lat}, ${query.center.lon}; ${query.radiusKm} km). Period: ${query.start} to ${query.end} UTC. Products: ${query.products.join(", ")}. Retrieval: ${retrievedAt ?? "not provided"}.${synthetic ? " Synthetic fixture data." : ""}`;
 
   const download = () => {
     const blob = new Blob([csvFor(observations, query, retrievedAt, synthetic, activeFilters)], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `firewatch-${query.start.slice(0, 10)}-to-${query.end.slice(0, 10)}.csv`;
+    anchor.download = `pyra-${query.start.slice(0, 10)}-to-${query.end.slice(0, 10)}.csv`;
     document.body.append(anchor);
     anchor.click();
     anchor.remove();

@@ -117,9 +117,14 @@ function isEmpty(value: unknown): boolean {
   return isRecord(value) && typeof value.count === "number" && value.count === 0;
 }
 
+function reasonOf(data: unknown): string | undefined {
+  if (isRecord(data) && typeof data.coverage_reason === "string" && data.coverage_reason) return data.coverage_reason;
+  return undefined;
+}
+
 function stateFromData<T>(data: T): ApiResult<T> {
-  if (isUnavailable(data)) return { state: "unavailable", origin: "api", data, synthetic: false, message: "Coverage is unavailable for this selection." };
-  if (isEmpty(data)) return { state: "empty", origin: "api", data, synthetic: false, message: "No satellite hotspot detections were returned for this area and period. This does not prove that no fire occurred." };
+  if (isUnavailable(data)) return { state: "unavailable", origin: "api", data, synthetic: false, message: reasonOf(data) ?? "Coverage is unavailable for this selection." };
+  if (isEmpty(data)) return { state: "empty", origin: "api", data, synthetic: false, message: reasonOf(data) ?? "No satellite hotspot detections were returned for this area and period. This does not prove that no fire occurred." };
   return { state: "success", origin: "api", data, synthetic: false };
 }
 
@@ -131,6 +136,7 @@ function queryString(query: ObservationQuery, extra: Record<string, string> = {}
     ...(query.products ? { products: query.products.join(",") } : {}),
     ...(query.limit !== undefined ? { limit: String(query.limit) } : {}),
     ...(query.cursor ? { cursor: query.cursor } : {}),
+    ...(query.live ? { live: "1" } : {}),
     ...extra
   });
   return params.toString();
@@ -155,6 +161,19 @@ function makeFixture<T>(data: T, override?: DemoStateOverride): ApiResult<T> {
 function toApiError(error: unknown): ApiClientError {
   if (error instanceof ApiClientError) return error;
   return new ApiClientError(error instanceof Error ? error.message : "The API request failed.");
+}
+
+async function unavailableMessage(response: Response): Promise<string> {
+  const fallback = "The observation service is currently unavailable.";
+  try {
+    const body: unknown = await response.json();
+    if (isRecord(body) && isRecord(body.error) && typeof body.error.message === "string" && body.error.message) {
+      return `${fallback} ${body.error.message}`;
+    }
+  } catch {
+    // Non-JSON or empty body: stay with the generic message.
+  }
+  return fallback;
 }
 
 export function createApiClient(options: ApiClientOptions = {}) {
@@ -185,7 +204,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
 
       if ([502, 503, 504].includes(response.status)) {
         if (demoMode) return createSyntheticFixture(fixture(), "success", `Synthetic fixture data is shown because the API returned ${response.status}.`);
-        return { state: "unavailable", origin: "api", data: null, synthetic: false, message: "The observation service is currently unavailable." };
+        return { state: "unavailable", origin: "api", data: null, synthetic: false, message: await unavailableMessage(response) };
       }
 
       if (!response.ok) {

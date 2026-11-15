@@ -43,7 +43,7 @@ export function ProvenanceView() {
           <table className="coverage-table"><caption>Active-fire sensor archive starts</caption><thead><tr><th>Sensor</th><th>Platform / product</th><th>Archive starts</th></tr></thead><tbody>{COVERAGE_WINDOWS.map((window) => <tr key={`${window.sensor}-${window.platform}`}><td>{window.sensor}</td><td>{window.platform}</td><td>{window.start}</td></tr>)}</tbody></table>
         </section>
         <section className="provenance-panel">
-          <h2>Backend metadata</h2>
+          <h2>Metadata</h2>
           {loading ? <p role="status">Loading metadata…</p> : metadata?.state === "error" || metadata?.state === "unavailable" ? <div role="alert"><p>Metadata is unavailable. {metadata.message ?? "No metadata response."}</p><button type="button" className="small-action" onClick={() => { setLoading(true); setReloadKey((key) => key + 1); }}>Retry metadata</button></div> : <>
             <p>Latest successful ingestion: <strong>{timestamp(response?.freshness.latest_ingested_at)}</strong></p>
             <h3>Products reported by the API</h3>

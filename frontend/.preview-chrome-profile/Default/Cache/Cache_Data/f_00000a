@@ -188,7 +188,7 @@ export function ProvenanceView() {
 					}, this),
 					/* @__PURE__ */ _jsxDEV("section", {
 						className: "provenance-panel",
-						children: [/* @__PURE__ */ _jsxDEV("h2", { children: "Backend metadata" }, void 0, false, {
+						children: [/* @__PURE__ */ _jsxDEV("h2", { children: "Metadata" }, void 0, false, {
 							fileName: _jsxFileName,
 							lineNumber: 46,
 							columnNumber: 11

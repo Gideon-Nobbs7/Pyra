@@ -22,4 +22,10 @@ export type GlobeViewProps = {
     requestId: number;
   };
   resetRequestId?: number;
+  flyTo?: {
+    lat: number;
+    lon: number;
+    requestId: number;
+  };
+  onReady?: () => void;
 };

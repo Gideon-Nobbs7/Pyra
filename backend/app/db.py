@@ -11,12 +11,14 @@ presented as equally fresh. Fixtures serve only when no store is configured
 empty.
 """
 
-import os
 import time
 
-DATABASE_URL = os.getenv("DATABASE_URL", "")
-FALLBACK_URL = os.getenv("DATABASE_URL_FALLBACK", "")
-LOCAL_URL = os.getenv("DATABASE_URL_LOCAL", "")
+from app.settings import get_settings
+
+_settings = get_settings()
+DATABASE_URL = _settings.database_url
+FALLBACK_URL = _settings.database_url_fallback
+LOCAL_URL = _settings.database_url_local
 USE_DB = bool(DATABASE_URL or FALLBACK_URL or LOCAL_URL)
 
 RESOLUTION_TTL_S = 60.0
@@ -59,7 +61,8 @@ DB_FRESHNESS_SQL = "SELECT max(ingested_at) AS latest, count(*) AS n FROM observ
 
 def db_configured() -> bool:
     # Dynamic (not import-time) so tests and process env changes take effect.
-    return bool(os.getenv("DATABASE_URL", "") or os.getenv("DATABASE_URL_FALLBACK", ""))
+    settings = get_settings()
+    return bool(settings.database_url or settings.database_url_fallback)
 
 
 def db_status() -> str:
@@ -153,6 +156,37 @@ def fetch_page(
     records = [_row_to_record(r) for r in rows]
     has_more = len(records) > limit
     return records[:limit], has_more
+
+
+COUNT_SQL = """
+SELECT COUNT(*) AS n
+FROM observations
+WHERE observed_at >= %(start)s
+  AND observed_at <= %(end)s
+  AND longitude >= %(min_lon)s AND longitude <= %(max_lon)s
+  AND latitude >= %(min_lat)s AND latitude <= %(max_lat)s
+  AND source = ANY (%(products)s)
+"""
+
+
+def fetch_count(start_iso: str, end_iso: str, bbox: list[float], products: list[str]) -> int:
+    """Total matching rows (uncapped). Raises on DB failure."""
+    min_lon, min_lat, max_lon, max_lat = bbox
+    params = {
+        "start": start_iso,
+        "end": end_iso,
+        "min_lon": min_lon,
+        "max_lon": max_lon,
+        "min_lat": min_lat,
+        "max_lat": max_lat,
+        "products": products,
+    }
+    url, _ = resolve_database_url()
+    with _try_connect(url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(COUNT_SQL, params)
+            row = cur.fetchone()
+    return row["n"] if row else 0
 
 
 def fetch_freshness() -> dict:

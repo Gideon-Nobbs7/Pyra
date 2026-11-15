@@ -49,6 +49,7 @@ def test_db_mode_serves_rows_then_cache(monkeypatch):
     monkeypatch.setattr(db_module, "db_configured", lambda: True)
     monkeypatch.setattr(db_module, "fetch_page", fake_page)
     monkeypatch.setattr(db_module, "fetch_freshness", lambda: FRESHNESS)
+    monkeypatch.setattr(db_module, "fetch_count", lambda *a: 5)
 
     c = get_client()
     r1 = c.get("/api/v1/observations", params=_params())
@@ -68,6 +69,7 @@ def test_db_empty_is_empty_not_unavailable(monkeypatch):
     monkeypatch.setattr(db_module, "db_configured", lambda: True)
     monkeypatch.setattr(db_module, "fetch_page", lambda *a: ([], False))
     monkeypatch.setattr(db_module, "fetch_freshness", lambda: FRESHNESS)
+    monkeypatch.setattr(db_module, "fetch_count", lambda *a: 0)
 
     c = get_client()
     r = c.get("/api/v1/observations", params=_params())

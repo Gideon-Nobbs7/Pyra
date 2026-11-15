@@ -52,6 +52,7 @@ def test_db_miss_triggers_fetch_then_cache(monkeypatch):
     monkeypatch.setattr(db_module, "db_configured", lambda: True)
     monkeypatch.setattr(db_module, "fetch_page", fake_page)
     monkeypatch.setattr(db_module, "fetch_freshness", lambda: FRESHNESS)
+    monkeypatch.setattr(db_module, "fetch_count", lambda *a: 2)
     monkeypatch.setattr(firms_lib, "map_key", lambda: "K")
     monkeypatch.setattr(firms_lib, "fetch_and_store", fake_fetch_and_store)
     monkeypatch.setattr(firms_lib, "_utcnow", lambda: NOW)
@@ -80,6 +81,7 @@ def test_db_miss_without_key_serves_empty(monkeypatch):
     monkeypatch.setattr(db_module, "db_configured", lambda: True)
     monkeypatch.setattr(db_module, "fetch_page", lambda *a: ([], False))
     monkeypatch.setattr(db_module, "fetch_freshness", lambda: FRESHNESS)
+    monkeypatch.setattr(db_module, "fetch_count", lambda *a: 0)
     monkeypatch.setattr(firms_lib, "map_key", lambda: "")
 
     c = get_client()

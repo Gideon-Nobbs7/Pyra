@@ -1,72 +1,84 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-from app.fixtures import FIXTURE_BBOX, FIXTURE_END, FIXTURE_START, get_freshness
+from app import db
+from app.fixtures import get_freshness
 
 router = APIRouter()
 
 
+def _freshness() -> tuple[dict, bool]:
+    """DB freshness when a store answers, else the fixture statement. Never raises."""
+    if db.db_configured():
+        try:
+            fresh = db.fetch_freshness()
+            return fresh, bool(fresh.get("synthetic", False))
+        except Exception:
+            pass
+    return get_freshness(), True
+
+
+PRODUCTS = [
+    {
+        "source": "modis",
+        "product": "MODIS Collection 6.1 active fire (MCD14DL)",
+        "version": "6.1",
+        "coverage_start": "2000-11-01T00:00:00+00:00",
+        "coverage_end": None,
+        "limitations": [
+            "1 km pixels; center point is not the fire location.",
+            "Suomi NPP VIIRS is excluded: the spacecraft stopped delivering data on 2 Nov 2026.",
+        ],
+    },
+    {
+        "source": "viirs",
+        "product": "VIIRS 375 m active fire, NOAA-20 (VJ114IMGTDL_NRT)",
+        "version": "1.0NRT",
+        "coverage_start": "2018-04-01T00:00:00+00:00",
+        "coverage_end": None,
+        "limitations": [
+            "375 m pixels; greater small-fire response than MODIS.",
+        ],
+    },
+    {
+        "source": "viirs",
+        "product": "VIIRS 375 m active fire, NOAA-21 (VJ214IMGTDL_NRT)",
+        "version": "1.0NRT",
+        "coverage_start": "2023-03-01T00:00:00+00:00",
+        "coverage_end": None,
+        "limitations": [
+            "375 m pixels; greater small-fire response than MODIS.",
+        ],
+    },
+]
+
+GLOBAL_LIMITATIONS = [
+    "A satellite hotspot is a detection, not a confirmed wildfire, perimeter, or burned area.",
+    "Zero detections do not prove no fire occurred.",
+    "Observation time and ingestion time are distinct fields.",
+    "We acknowledge the use of NASA FIRMS data and imagery, part of NASA LANCE/ESDIS. "
+    "FIRMS information is provided 'as is'.",
+]
+
+
 @router.get("/metadata")
 def metadata() -> JSONResponse:
+    freshness, synthetic = _freshness()
     return JSONResponse(
         {
-            "products": [
-                {
-                    "source": "modis",
-                    "name": "MODIS Collection 6.1 active fire (MCD14DL)",
-                    "coverage": "1 Nov 2000 to present (FIRMS Archive Download)",
-                    "confidence": "source-defined l/n/h; see docs/harmonization.md",
-                    "frp_unit": "MW",
-                },
-                {
-                    "source": "viirs",
-                    "name": "VIIRS 375m active fire, NOAA-20 (VJ114IMGTDL_NRT)",
-                    "coverage": "1 Apr 2018 to present (FIRMS Archive Download)",
-                    "confidence": "source-defined l/n/h; see docs/harmonization.md",
-                    "frp_unit": "MW",
-                },
-                {
-                    "source": "viirs",
-                    "name": "VIIRS 375m active fire, NOAA-21 (VJ214IMGTDL_NRT)",
-                    "coverage": "1 Mar 2023 to present (FIRMS Archive Download)",
-                    "confidence": "source-defined l/n/h; see docs/harmonization.md",
-                    "frp_unit": "MW",
-                },
-            ],
-            "coverage": {
-                "fixture_bbox": list(FIXTURE_BBOX),
-                "fixture_start": FIXTURE_START.isoformat(),
-                "fixture_end": FIXTURE_END.isoformat(),
+            "products": PRODUCTS,
+            "harmonization": {
+                "method": "Two-sensor harmonized hotspot series; resolutions, sensitivities, "
+                "and overpass schedules reconciled per docs/harmonization.md. "
+                "A harmonized count is a detection count, never fires or burned area.",
+                "documentation_url": None,
             },
-            "freshness": get_freshness(),
-            "fields": [
-                "id",
-                "source",
-                "source_record_id",
-                "observed_at",
-                "ingested_at",
-                "latitude",
-                "longitude",
-                "instrument",
-                "platform",
-                "confidence",
-                "frp",
-                "frp_unit",
-                "quality_flags",
-                "product_version",
-                "raw_properties",
-            ],
-            "limitations": [
-                "A satellite hotspot is a detection, not a confirmed "
-                "wildfire, perimeter, or burned area.",
-                "Zero detections do not prove no fire occurred.",
-                "Serving labelled synthetic fixtures until the FIRMS ingest runs.",
-                "Observation time and ingestion time are distinct fields.",
-                "Suomi NPP VIIRS is excluded: the spacecraft stopped delivering "
-                "data on 2 Nov 2026.",
-                "We acknowledge the use of NASA FIRMS data and imagery, part of "
-                "NASA LANCE/ESDIS. FIRMS information is provided 'as is'.",
-            ],
-            "synthetic": True,
+            "freshness": {
+                "latest_ingested_at": freshness.get("latest_ingested_at"),
+                "store": freshness.get("store"),
+                "synthetic": freshness.get("synthetic", synthetic),
+            },
+            "limitations": GLOBAL_LIMITATIONS,
+            "synthetic": synthetic,
         }
     )

@@ -3,7 +3,7 @@
 import base64
 from datetime import UTC, datetime
 
-ALLOWED_PARAMS = {"start", "end", "bbox", "limit", "cursor", "products"}
+ALLOWED_PARAMS = {"start", "end", "bbox", "limit", "cursor", "products", "live"}
 
 
 def reject_unknown(params: dict) -> str | None:

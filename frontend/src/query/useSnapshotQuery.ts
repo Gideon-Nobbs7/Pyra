@@ -13,6 +13,7 @@ export type QuerySelection = {
   selectedMonth: string;
   products: Array<"modis" | "viirs">;
   sensorScope: SensorScope;
+  liveMode: boolean;
   areaSource: "default" | "place" | "coordinates" | "location";
 };
 
@@ -29,8 +30,9 @@ export type SnapshotView = {
   comparison: ApiResult<ComparisonResponse> | null;
 };
 
-const DEFAULT_CENTER = { lat: 40.02, lon: -2.13 };
-const DEFAULT_RADIUS_KM = 25;
+export const DEFAULT_CENTER = { lat: 20, lon: 0 };
+export const DEFAULT_RADIUS_KM = 500;
+export const WORLD_BBOX: QuerySelection["bbox"] = [-180, -90, 180, 90];
 
 function defaultDates(): Pick<QuerySelection, "start" | "end" | "selectedMonth"> {
   const end = new Date();
@@ -75,7 +77,7 @@ function readSelectionFromUrl(): QuerySelection {
     : DEFAULT_CENTER;
   const radiusParam = Number(params.get("radiusKm"));
   const radiusKm = Number.isFinite(radiusParam) && radiusParam >= 1 && radiusParam <= 500 ? radiusParam : DEFAULT_RADIUS_KM;
-  const bbox = validBbox(params.get("bbox")) ?? radiusToBbox(center.lat, center.lon, radiusKm);
+  const bbox = validBbox(params.get("bbox")) ?? [...WORLD_BBOX];
   const productParams = (params.get("products") ?? "modis,viirs").split(",").filter((item): item is "modis" | "viirs" => item === "modis" || item === "viirs");
   const sensor = params.get("sensorScope");
   const sensorScope: SensorScope = sensor === "modis" || sensor === "viirs" ? sensor : "all";
@@ -86,7 +88,7 @@ function readSelectionFromUrl(): QuerySelection {
   const selectedMonth = monthParam && /^\d{4}-(0[1-9]|1[0-2])$/.test(monthParam) ? monthParam : end.slice(0, 7);
   return {
     bbox,
-    areaLabel: (params.get("area") || "Serrania de Cuenca").slice(0, 120),
+    areaLabel: (params.get("area") || "Global view").slice(0, 120),
     areaSource: params.has("area") ? "place" : "default",
     center,
     radiusKm,
@@ -94,7 +96,8 @@ function readSelectionFromUrl(): QuerySelection {
     end,
     selectedMonth: /^\d{4}-\d{2}$/.test(selectedMonth) ? selectedMonth : end.slice(0, 7),
     products: productParams.length ? productParams : ["modis", "viirs"],
-    sensorScope
+    sensorScope,
+    liveMode: params.get("live") === "1"
   };
 }
 
@@ -117,12 +120,21 @@ function writeSelectionToUrl(selection: QuerySelection): void {
   params.set("selectedMonth", selection.selectedMonth);
   params.set("products", selection.products.join(","));
   params.set("sensorScope", selection.sensorScope);
+  if (selection.liveMode) params.set("live", "1");
+  else params.delete("live");
   window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}${window.location.hash}`);
 }
 
 export function toObservationQuery(selection: QuerySelection): ObservationQuery {
   const products = selection.sensorScope === "all" ? selection.products : [selection.sensorScope];
-  return { start: selection.start, end: selection.end, bbox: selection.bbox, products, limit: 1000 };
+  return {
+    start: selection.start,
+    end: selection.end,
+    bbox: selection.bbox,
+    products,
+    limit: 1000,
+    ...(selection.liveMode ? { live: true } : {})
+  };
 }
 
 function mapApiResult(result: ApiResult<ObservationPage>, selection: QuerySelection): SnapshotView {
@@ -185,11 +197,15 @@ export function useSnapshotQuery() {
     const requestedQuery = toObservationQuery(query);
     setSnapshot({ state: "loading", query, data: null, dataQuery: null, retrievedAt: null, synthetic: false, summary: null, dailySummary: null, comparison: null });
 
+    // Live mode is an observations-only pull: summary, comparison, and CSV keep
+    // the stored archive for the same filters so the panels stay comparable.
+    const storedQuery = { ...requestedQuery };
+    delete storedQuery.live;
     void Promise.all([
       apiClient.getObservations(requestedQuery, { signal: controller.signal }),
-      apiClient.getSummary({ ...requestedQuery, interval: "month" }, { signal: controller.signal }),
-      apiClient.getSummary({ ...requestedQuery, interval: "day" }, { signal: controller.signal }),
-      apiClient.getComparison(requestedQuery, { signal: controller.signal })
+      apiClient.getSummary({ ...storedQuery, interval: "month" }, { signal: controller.signal }),
+      apiClient.getSummary({ ...storedQuery, interval: "day" }, { signal: controller.signal }),
+      apiClient.getComparison(storedQuery, { signal: controller.signal })
     ]).then(([result, summary, dailySummary, comparison]) => {
       if (controller.signal.aborted || requestId !== requestIdRef.current) return;
       const next = { ...mapApiResult(result, query), summary, dailySummary, comparison };

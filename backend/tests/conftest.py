@@ -11,6 +11,8 @@ def _fixture_mode(monkeypatch):
     monkeypatch.delenv("DATABASE_URL", raising=False)
     monkeypatch.delenv("DATABASE_URL_FALLBACK", raising=False)
     monkeypatch.delenv("DATABASE_URL_LOCAL", raising=False)
+    # Process env only: the repo-root .env must never leak into the suite.
+    monkeypatch.setenv("PYRA_ENV_FILE", "")
 
 
 def get_client() -> TestClient:

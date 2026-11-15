@@ -16,10 +16,11 @@ import hashlib
 import io
 import json
 import logging
-import os
 import time
 import urllib.request
 from datetime import UTC, datetime, timedelta
+
+from app.settings import get_settings
 
 log = logging.getLogger("pyra.firms")
 
@@ -83,7 +84,7 @@ def _utcnow() -> datetime:
 
 def load_api_products() -> dict[str, str]:
     """API product strings, overridable via FIRMS_API_PRODUCTS JSON. Fail loudly."""
-    raw = os.environ.get("FIRMS_API_PRODUCTS", "").strip()
+    raw = get_settings().firms_api_products.strip()
     if not raw:
         return dict(DEFAULT_API_PRODUCTS)
     try:
@@ -104,7 +105,7 @@ def load_api_products() -> dict[str, str]:
 
 
 def map_key() -> str:
-    return os.environ.get("FIRMS_MAP_KEY", "")
+    return get_settings().firms_map_key
 
 
 def parse_bbox(value: str) -> tuple[float, float, float, float]:
@@ -368,10 +369,12 @@ def stream_archive(
     return summary
 
 
-def fetch_api_csv(product: str, bbox: str, day_range: int, date: str, key: str) -> str:
+def fetch_api_csv(
+    product: str, bbox: str, day_range: int, date: str, key: str, timeout_s: int = 30
+) -> str:
     url = f"https://{FIRMS_API_HOST}/api/area/csv/{key}/{product}/{bbox}/{day_range}/{date}"
     req = urllib.request.Request(url, headers={"User-Agent": "Pyra/0.1"})
-    with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310 (allowlisted below)
+    with urllib.request.urlopen(req, timeout=timeout_s) as resp:  # noqa: S310 (allowlisted below)
         if resp.status != 200:
             raise RuntimeError(f"FIRMS API returned HTTP {resp.status} for {product}")
         return resp.read().decode("utf-8", errors="replace")
@@ -414,6 +417,45 @@ def reset_rate_limit() -> None:
     _last_provider_call = 0.0
 
 
+def fetch_live_records(
+    products: dict[str, str],
+    sources: list[str],
+    bbox: list[float],
+    fetch_end: str,
+    timeout_s: int = 8,
+) -> tuple[list[dict], list[dict]]:
+    """Bounded live pull with NO persistence. Returns (records, failures).
+
+    Same provider call as the ingest path, but rows are returned, never
+    written. Used by live mode and the on-demand read path (which upserts).
+    """
+    key = map_key()
+    if not key:
+        raise ValueError("FIRMS_MAP_KEY is not set")
+    ingested_at = _utcnow()
+    bbox_tuple = tuple(bbox)
+    bbox_str = ",".join(str(v) for v in bbox)
+    out: list[dict] = []
+    failures: list[dict] = []
+    for name, product in products.items():
+        source = _source_for_product(name)
+        if source not in sources:
+            continue
+        try:
+            text = fetch_api_csv(product, bbox_str, ON_DEMAND_DAY_RANGE, fetch_end, key, timeout_s)
+        except Exception as exc:
+            log.error("live fetch failed for %s (%s): %s", name, product, exc)
+            failures.append({"name": name, "product": product, "stage": "fetch", "error": str(exc)})
+            continue
+        try:
+            out.extend(prepare_records(text, source, ingested_at, bbox_tuple))
+        except Exception as exc:
+            log.error("live payload rejected for %s (%s): %s", name, product, exc)
+            failures.append({"name": name, "product": product, "stage": "parse", "error": str(exc)})
+            continue
+    return out, failures
+
+
 def fetch_and_store(
     products: dict[str, str],
     sources: list[str],
@@ -422,30 +464,6 @@ def fetch_and_store(
     database_url: str,
 ) -> tuple[int, list[dict]]:
     """Bounded live pull for the requested sources. Returns (rows, failures)."""
-    key = map_key()
-    if not key:
-        raise ValueError("FIRMS_MAP_KEY is not set")
-    ingested_at = _utcnow()
-    bbox_tuple = tuple(bbox)
-    total = 0
-    failures = []
-    for name, product in products.items():
-        source = _source_for_product(name)
-        if source not in sources:
-            continue
-        try:
-            text = fetch_api_csv(
-                product, ",".join(str(v) for v in bbox), ON_DEMAND_DAY_RANGE, fetch_end, key
-            )
-        except Exception as exc:
-            log.error("on-demand fetch failed for %s (%s): %s", name, product, exc)
-            failures.append({"name": name, "product": product, "stage": "fetch", "error": str(exc)})
-            continue
-        try:
-            records = prepare_records(text, source, ingested_at, bbox_tuple)
-        except Exception as exc:
-            log.error("on-demand payload rejected for %s (%s): %s", name, product, exc)
-            failures.append({"name": name, "product": product, "stage": "parse", "error": str(exc)})
-            continue
-        total += upsert_records(records, database_url)
+    records, failures = fetch_live_records(products, sources, bbox, fetch_end, timeout_s=30)
+    total = upsert_records(records, database_url)
     return total, failures

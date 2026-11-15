@@ -8,11 +8,12 @@ DB mode treats zero matches as empty.
 """
 
 import logging
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from app import db, firms
+from app import db, firms, ingest_jobs
 from app.api.v1.query import (
     decode_cursor,
     encode_cursor,
@@ -79,6 +80,163 @@ def _maybe_on_demand_fetch(
         return [], False
 
 
+async def _live_observations(
+    start,
+    end,
+    min_lon,
+    min_lat,
+    max_lon,
+    max_lat,
+    bbox_raw: str,
+    products: list[str],
+    limit: int,
+    offset: int,
+) -> JSONResponse:
+    """Live FIRMS read with no persistence: no cache, no DB, no upsert.
+
+    Same bounded window policy as the on-demand path (recent, small bbox),
+    but rows are served directly and never stored. Concurrent identical live
+    requests share a single-flight lock to protect the shared FIRMS quota.
+    """
+    bbox = [min_lon, min_lat, max_lon, max_lat]
+    window = firms.on_demand_window(start, end, bbox)
+    if window is None:
+        now = datetime.now(UTC)
+        if end < now - timedelta(days=firms.ON_DEMAND_LOOKBACK_DAYS):
+            reason = (
+                "Live fetch covers the recent window only. For older periods, "
+                "run an ingest or wait for the archive backfill."
+            )
+        else:
+            reason = (
+                "Live fetch is bounded to "
+                f"{firms.ON_DEMAND_MAX_DEG2:g} deg\u00b2. Lock a smaller area "
+                "or run an ingest for wide areas."
+            )
+        return JSONResponse(
+            _envelope(
+                data=[],
+                count=0,
+                limit=limit,
+                next_cursor=None,
+                has_more=False,
+                start_iso=start.isoformat(),
+                end_iso=end.isoformat(),
+                bbox_list=bbox,
+                products=products,
+                freshness={
+                    "latest_ingested_at": None,
+                    "row_count": 0,
+                    "synthetic": False,
+                    "store": "live",
+                    "note": "live FIRMS pull; not stored",
+                },
+                coverage_status="unavailable",
+                coverage_reason=reason,
+                synthetic=False,
+            )
+        )
+    if not firms.map_key():
+        return _error(
+            "upstream_unavailable",
+            "Live mode requires FIRMS_MAP_KEY on the server.",
+            status=503,
+        )
+    if not firms.rate_limit_ok():
+        return _error(
+            "rate_limited",
+            "Live fetch throttled to protect the shared FIRMS quota. Retry in about a minute.",
+            status=429,
+        )
+    try:
+        api_products = firms.load_api_products()
+    except ValueError as exc:
+        log.error("live fetch skipped, bad FIRMS_API_PRODUCTS: %s", exc)
+        return _error("upstream_unavailable", f"bad FIRMS_API_PRODUCTS: {exc}", status=503)
+    _, fetch_end, _ = window
+    lock_key = cache_state.cache.make_key(
+        ",".join(products), start.isoformat(), end.isoformat(), bbox_raw, limit, ""
+    )
+    async with cache_state.cache.lock_for("live:" + lock_key):
+        try:
+            records, failures = firms.fetch_live_records(
+                api_products, products, bbox, fetch_end, timeout_s=8
+            )
+        except Exception as exc:
+            log.warning("live fetch failed: %s", exc)
+            return _error(
+                "upstream_unavailable",
+                "The live FIRMS request failed. Retry shortly; "
+                "no result is implied by this response.",
+                status=503,
+            )
+    if failures:
+        log.info("live fetch partial failures: %s", failures)
+    if not records and failures:
+        return _error(
+            "upstream_unavailable",
+            "The live FIRMS request failed. Retry shortly; no result is implied by this response.",
+            status=503,
+        )
+    records.sort(key=lambda r: (r["observed_at"], r["id"]))
+    total = len(records)
+    page_raw = records[offset : offset + limit]
+    has_more = offset + len(page_raw) < total
+    page = [db._row_to_record(r) for r in page_raw]
+    status = "ok" if page else "empty"
+    fetched_at = datetime.now(UTC).isoformat()
+    return JSONResponse(
+        _envelope(
+            data=page,
+            count=total,
+            limit=limit,
+            next_cursor=encode_cursor(offset + len(page)) if has_more else None,
+            has_more=has_more,
+            start_iso=start.isoformat(),
+            end_iso=end.isoformat(),
+            bbox_list=bbox,
+            products=products,
+            freshness={
+                "latest_ingested_at": fetched_at,
+                "row_count": total,
+                "synthetic": False,
+                "store": "live",
+                "note": "live FIRMS pull; not stored",
+            },
+            coverage_status=status,
+            coverage_reason=(
+                "ok"
+                if page
+                else "No satellite hotspot detections were returned for this area "
+                "and period. This does not prove that no fire occurred."
+            ),
+            synthetic=False,
+        )
+    )
+
+
+def _enqueue_gap_fill(start, end, bbox: list[float]) -> None:
+    """Best-effort gap-fill: the user's locked bbox, for the worker.
+
+    Only windows the synchronous on-demand fetch cannot cover (history or
+    wide areas). Recent+small misses are the sync path's job. Never fails
+    the request.
+    """
+    try:
+        if firms.on_demand_window(start, end, bbox) is not None:
+            return
+        outcome = ingest_jobs.enqueue_job(bbox, start, end)
+        log.info(
+            "gap-fill %s bbox=%s window=%s..%s",
+            outcome,
+            bbox,
+            start.date(),
+            end.date(),
+        )
+    except Exception as exc:
+        log.warning("gap-fill enqueue failed: %s", exc)
+
+
 def _inside_fixture_coverage(start, end, min_lon, min_lat, max_lon, max_lat) -> bool:
     """True when the query falls inside the labelled M1 fixture window."""
     time_outside = end < FIXTURE_START or start > FIXTURE_END
@@ -89,7 +247,7 @@ def _inside_fixture_coverage(start, end, min_lon, min_lat, max_lon, max_lat) -> 
 
 
 def _fixture_page(start, end, min_lon, min_lat, max_lon, max_lat, products, limit, offset):
-    """Filter the synthetic fixtures by time + area. Returns (page, has_more)."""
+    """Filter the synthetic fixtures by time + area. Returns (page, has_more, total)."""
     records = load_fixtures()
     kept = []
     for r in records:
@@ -106,7 +264,50 @@ def _fixture_page(start, end, min_lon, min_lat, max_lon, max_lat, products, limi
         kept.append(r)
     kept.sort(key=lambda r: (r["observed_at"], r["id"]))
     page = kept[offset : offset + limit]
-    return page, offset + len(page) < len(kept)
+    return page, offset + len(page) < len(kept), len(kept)
+
+
+def _envelope(
+    *,
+    data,
+    count,
+    limit,
+    next_cursor,
+    has_more,
+    start_iso,
+    end_iso,
+    bbox_list,
+    products,
+    freshness,
+    coverage_status,
+    coverage_reason,
+    synthetic,
+):
+    """Converged response shape: the frontend's expected fields plus the
+    backend's explicit state, freshness, and provenance fields."""
+    available = coverage_status != "unavailable"
+    filters = {"start": start_iso, "end": end_iso, "bbox": bbox_list, "products": products}
+    return {
+        "data": data,
+        "count": count,
+        "filters": filters,
+        "filters_applied": dict(filters),
+        "coverage": {
+            "start": start_iso if available else None,
+            "end": end_iso if available else None,
+            "available": available,
+        },
+        "freshness": {**freshness, "fetched_at": datetime.now(UTC).isoformat()},
+        "pagination": {
+            "limit": limit,
+            "next_cursor": next_cursor,
+            "cursor_next": next_cursor,
+            "has_more": has_more,
+        },
+        "coverage_status": coverage_status,
+        "coverage_reason": coverage_reason,
+        "synthetic": synthetic,
+    }
 
 
 @router.get("/observations")
@@ -134,34 +335,44 @@ async def list_observations(request: Request) -> JSONResponse:
             return _error("invalid_params", "limit must be in [1, 1000]", status=422)
         offset = decode_cursor(cursor_raw)
         products = parse_products(products_raw)
+        live_raw = (params.get("live") or "").strip().lower()
+        if live_raw and live_raw not in ("1", "true"):
+            return _error("invalid_params", "live must be '1' or 'true' when present", status=422)
+        live = live_raw in ("1", "true")
     except ValueError as exc:
         return _error("invalid_params", str(exc), status=422)
     except Exception:
-        return _error("invalid_params", "invalid limit; must be an integer", status=422)
+        return _error("invalid limit; must be an integer", status=422)
+
+    if live:
+        return await _live_observations(
+            start, end, min_lon, min_lat, max_lon, max_lat, bbox_raw, products, limit, offset
+        )
 
     # Coverage gate applies to fixture-only mode (no DB configured).
     if not db.db_configured():
         if not _inside_fixture_coverage(start, end, min_lon, min_lat, max_lon, max_lat):
             return JSONResponse(
-                {
-                    "data": [],
-                    "pagination": {"limit": limit, "cursor_next": None, "has_more": False},
-                    "filters_applied": {
-                        "start": start.isoformat(),
-                        "end": end.isoformat(),
-                        "bbox": [min_lon, min_lat, max_lon, max_lat],
-                        "products": products,
-                    },
-                    "freshness": get_freshness(),
-                    "coverage_status": "unavailable",
-                    "coverage_reason": (
+                _envelope(
+                    data=[],
+                    count=0,
+                    limit=limit,
+                    next_cursor=None,
+                    has_more=False,
+                    start_iso=start.isoformat(),
+                    end_iso=end.isoformat(),
+                    bbox_list=[min_lon, min_lat, max_lon, max_lat],
+                    products=products,
+                    freshness=get_freshness(),
+                    coverage_status="unavailable",
+                    coverage_reason=(
                         "Requested area/period is outside the M1 synthetic fixture coverage "
                         f"(bbox {list(FIXTURE_BBOX)}, "
                         f"{FIXTURE_START.date()}..{FIXTURE_END.date()}). "
                         "No FIRMS data loaded yet."
                     ),
-                    "synthetic": True,
-                }
+                    synthetic=True,
+                )
             )
 
     products_key = ",".join(products)
@@ -193,13 +404,16 @@ async def list_observations(request: Request) -> JSONResponse:
                     page, has_more = _maybe_on_demand_fetch(
                         start, end, [min_lon, min_lat, max_lon, max_lat], products, limit, offset
                     )
+                    if not page:
+                        _enqueue_gap_fill(start, end, [min_lon, min_lat, max_lon, max_lat])
                 from_fixtures = False
+                total = 0
                 if not page and _inside_fixture_coverage(
                     start, end, min_lon, min_lat, max_lon, max_lat
                 ):
                     # No source-backed rows here yet: labelled fixtures keep the
                     # demo window working until archive ingest covers it.
-                    page, has_more = _fixture_page(
+                    page, has_more, total = _fixture_page(
                         start,
                         end,
                         min_lon,
@@ -212,30 +426,35 @@ async def list_observations(request: Request) -> JSONResponse:
                     )
                     from_fixtures = True
                     log.info("fixture fallback key=%s rows=%d", key, len(page))
+                if not from_fixtures:
+                    total = db.fetch_count(
+                        start.isoformat(),
+                        end.isoformat(),
+                        [min_lon, min_lat, max_lon, max_lat],
+                        products,
+                    )
                 freshness = get_freshness() if from_fixtures else db.fetch_freshness()
-                body = {
-                    "data": page,
-                    "pagination": {
-                        "limit": limit,
-                        "cursor_next": encode_cursor(offset + len(page)) if has_more else None,
-                        "has_more": has_more,
-                    },
-                    "filters_applied": {
-                        "start": start.isoformat(),
-                        "end": end.isoformat(),
-                        "bbox": [min_lon, min_lat, max_lon, max_lat],
-                        "products": products,
-                    },
-                    "freshness": freshness,
-                    "coverage_status": "ok" if page else "empty",
-                    "coverage_reason": (
+                status = "ok" if page else "empty"
+                body = _envelope(
+                    data=page,
+                    count=total,
+                    limit=limit,
+                    next_cursor=encode_cursor(offset + len(page)) if has_more else None,
+                    has_more=has_more,
+                    start_iso=start.isoformat(),
+                    end_iso=end.isoformat(),
+                    bbox_list=[min_lon, min_lat, max_lon, max_lat],
+                    products=products,
+                    freshness=freshness,
+                    coverage_status=status,
+                    coverage_reason=(
                         "ok"
                         if page
                         else "No satellite hotspot detections were returned for this area "
                         "and period. This does not prove that no fire occurred."
                     ),
-                    "synthetic": from_fixtures,
-                }
+                    synthetic=from_fixtures,
+                )
                 ttl = cache_state.cache.ttl_for(start.isoformat(), end.isoformat())
                 cache_state.cache.put(key, body, ttl)
                 log.info(
@@ -251,32 +470,30 @@ async def list_observations(request: Request) -> JSONResponse:
                     status=503,
                 )
 
-        page, has_more = _fixture_page(
+        page, has_more, total = _fixture_page(
             start, end, min_lon, min_lat, max_lon, max_lat, products, limit, offset
         )
-        body = {
-            "data": page,
-            "pagination": {
-                "limit": limit,
-                "cursor_next": encode_cursor(offset + len(page)) if has_more else None,
-                "has_more": has_more,
-            },
-            "filters_applied": {
-                "start": start.isoformat(),
-                "end": end.isoformat(),
-                "bbox": [min_lon, min_lat, max_lon, max_lat],
-                "products": products,
-            },
-            "freshness": get_freshness(),
-            "coverage_status": "ok" if page else "empty",
-            "coverage_reason": (
+        status = "ok" if page else "empty"
+        body = _envelope(
+            data=page,
+            count=total,
+            limit=limit,
+            next_cursor=encode_cursor(offset + len(page)) if has_more else None,
+            has_more=has_more,
+            start_iso=start.isoformat(),
+            end_iso=end.isoformat(),
+            bbox_list=[min_lon, min_lat, max_lon, max_lat],
+            products=products,
+            freshness=get_freshness(),
+            coverage_status=status,
+            coverage_reason=(
                 "ok"
                 if page
                 else "No satellite hotspot detections were returned for this area and period. "
                 "This does not prove that no fire occurred."
             ),
-            "synthetic": True,
-        }
+            synthetic=True,
+        )
         ttl = cache_state.cache.ttl_for(start.isoformat(), end.isoformat())
         cache_state.cache.put(key, body, ttl)
         log.info("cache miss key=%s ttl=%s rows=%d", key, ttl, len(page))

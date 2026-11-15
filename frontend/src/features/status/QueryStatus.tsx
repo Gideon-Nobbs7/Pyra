@@ -7,8 +7,8 @@ const EMPTY_COPY = "No satellite hotspot detections were returned for this area 
 export function QueryStatus({ snapshot, onRetry }: Props) {
   if (snapshot.state === "idle" || snapshot.state === "success") return null;
   const copy = snapshot.state === "loading" ? "Loading observations for this selection…"
-    : snapshot.state === "empty" ? EMPTY_COPY
-      : snapshot.state === "unavailable" ? "This area or period is outside the available sensor archive coverage."
+    : snapshot.state === "empty" ? snapshot.message ?? EMPTY_COPY
+      : snapshot.state === "unavailable" ? snapshot.message ?? "This area or period is outside the available sensor archive coverage."
         : snapshot.state === "stale" ? snapshot.message ?? "Showing the previous successful result. It may not match the current selection."
           : snapshot.message ?? "The observation request failed.";
   const retrieved = snapshot.retrievedAt ? new Date(snapshot.retrievedAt) : null;

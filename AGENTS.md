@@ -1,6 +1,6 @@
 # Pyra agent guide
 
-Pyra is the project and repository. The PRD in this repo (v1.2, 20 October 2026) names the product FireWatch. Use Pyra for code, packages, and repo docs. Use FireWatch when the PRD's product name matters, such as user-facing copy or provenance text.
+Pyra is the project and repository. Use Pyra for code, packages, and repo docs.
 
 Pyra is a web app for exploring satellite-observed fire hotspots on an interactive 3D globe. The product answers one question at a time: what did MODIS and VIIRS observe, in this area, during this period? The user locks an area on the map, then drags the timeline or the calendar to scrub through burning activity from the early 2000s to the present and watch the hotspots change. The globe, timeline, activity chart, calendar, count, and details panel all read the same query result. Changing the timeline or scrubbing the calendar must run a real historical query and replace the displayed observations. Neither control is decoration.
 
@@ -198,6 +198,7 @@ This file is plain Markdown. Do not add tool-specific frontmatter, directives, o
 - **Claude apps** do not read the repo automatically. Attach or paste this file into the conversation.
 
 Tools that start at the repo root do not always load a subfolder's guide. Before working in `frontend/` or `backend/`, open that folder's `AGENTS.md` yourself or start the tool with that folder as the workspace.
+
 - **Windows and WSL:** use forward-slash paths in docs. When a command differs between Bash and PowerShell, show both forms.
 
 ## Current state and next step
