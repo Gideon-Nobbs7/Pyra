@@ -55,6 +55,7 @@ export type ComparisonResponse = ResponseContext & {
   selected: { start: string; end: string; count: number };
   baseline: { start: string; end: string; median_count: number; years: number; sample_years?: number[] };
   anomaly: { count_delta: number; direction: "above" | "below" | "at_baseline" };
+  comparability_warning?: string | null;
 };
 
 export type HealthResponse = {
@@ -86,6 +87,17 @@ export type ApiResult<T> = {
   message?: string;
   synthetic: boolean;
 };
+
+export type PlaceSuggestion = {
+  name: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  latitude: number;
+  longitude: number;
+};
+
+export type PlaceResponse = { data: PlaceSuggestion[] };
 
 export type DemoStateOverride = "empty" | "unavailable" | "error" | "stale";
 

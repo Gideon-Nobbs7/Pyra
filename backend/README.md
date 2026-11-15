@@ -86,13 +86,17 @@ stops/restarts the worker. Standalone runs still work for cron/manual use:
 ```bash
 # one tick over every watch area, then exit (cron-friendly)
 uv run python scripts/ingest_worker.py --once
-# long-running daemon: ticks every WORKER_INTERVAL_S (default 3600, min 60)
+# long-running daemon: ticks every WORKER_INTERVAL_S (default 10, min 10;
+# below 60s risks provider quotas — the 60s per-call throttle still applies)
 WATCH_BBOXES="Tamale:-2.2,8.05,0.52,10.75;Ghana:-3.3,4.5,1.2,11.2" uv run python scripts/ingest_worker.py
 # single window, routed automatically (recent+small → FIRMS tail, else EE raster)
 uv run python scripts/ingest_window.py --bbox=-3.3,4.5,1.2,11.2 --start 2024-08-10 --end 2024-08-17
 ```
 
 `WATCH_BBOXES` (or `--watch`, same format) also lives in root `.env`.
+An explicitly empty shell export (e.g. `DATABASE_URL=""`) never masks a real
+root-`.env` value — empty falls back to the file. The server logs the
+effective tiers at startup (`database tiers configured: primary+fallback`).
 Each tick ingests the recent window per area and then claims user gap-fill
 jobs oldest-first (up to `WORKER_MAX_JOBS`, default 3). A gap-fill job is
 enqueued automatically when a query's locked bbox + window has no stored

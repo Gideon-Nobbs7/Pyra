@@ -54,7 +54,7 @@ def test_main_once_reports_area_failure(monkeypatch):
 
 def test_main_rejects_missing_areas_and_fast_interval():
     assert ingest_worker.main(["--once"]) == 2
-    assert ingest_worker.main(["--once", "--watch=Ok:0,0,1,1", "--interval=10"]) == 2
+    assert ingest_worker.main(["--once", "--watch=Ok:0,0,1,1", "--interval=5"]) == 2
 
 
 def test_worker_disabled_by_default(monkeypatch):
@@ -89,13 +89,23 @@ def test_lifespan_starts_and_stops_worker(monkeypatch):
     from tests.conftest import get_client
 
     monkeypatch.setenv("WORKER_ENABLED", "1")
+    for key in ("WORKER_INTERVAL_S", "WORKER_RECENT_DAYS", "WORKER_MAX_JOBS", "WATCH_BBOXES"):
+        monkeypatch.delenv(key, raising=False)
     calls = []
     monkeypatch.setattr(ingest_worker, "serve", lambda *a: calls.append(a) or 0)
     with get_client():
         pass
     assert len(calls) == 1
     interval, areas, days, timeout_s, max_jobs = calls[0]
-    assert (interval, days, timeout_s, max_jobs) == (3600, 7, 30, 3)
+    from app.settings import get_settings
+
+    defaults = get_settings()
+    assert (interval, days, timeout_s, max_jobs) == (
+        defaults.worker_interval_s,
+        defaults.worker_recent_days,
+        30,
+        defaults.worker_max_jobs,
+    )
     assert areas == []
     ingest_worker._stop = False
 

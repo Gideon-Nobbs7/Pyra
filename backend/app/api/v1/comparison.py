@@ -64,6 +64,17 @@ def _direction(delta: int) -> str:
     return "at_baseline"
 
 
+def _baseline_warning(base: str, counts: list[int]) -> str:
+    """Name a missing baseline explicitly: median 0 with no sample years
+    is not a baseline, and must never read as an anomaly anchor."""
+    if counts:
+        return base
+    return (
+        base + " No prior-year observations exist in the archive for this area and window, "
+        "so no historical baseline could be computed."
+    )
+
+
 @router.get("/comparison")
 async def comparison(request: Request) -> JSONResponse:
     params = dict(request.query_params)
@@ -170,6 +181,7 @@ async def comparison(request: Request) -> JSONResponse:
             counts = [n for _, n in yearly]
             median = int(statistics.median(counts)) if counts else 0
             delta = selected_count - median
+            baseline_note = _baseline_warning(warning, counts)
             return envelope(
                 {"start": start.isoformat(), "end": end.isoformat(), "count": selected_count},
                 {
@@ -187,7 +199,7 @@ async def comparison(request: Request) -> JSONResponse:
                 else "No satellite hotspot detections were returned for this area and period. "
                 "This does not prove that no fire occurred.",
                 False,
-                warning,
+                baseline_note,
             )
         except Exception as exc:
             log.warning("comparison database read failed: %s", exc)

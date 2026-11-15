@@ -99,11 +99,17 @@ function App() {
   const selectedRecord = snapshot.data?.data.find(({ id }) => id === selectedObservationId) ?? null;
   const monthlyBuckets = snapshot.summary?.data?.data ?? [];
   const dailyBuckets = snapshot.dailySummary?.data?.data ?? [];
+  const yearBuckets = snapshot.yearSummary?.data?.data ?? [];
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    params.set("view", activeView);
-    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}${window.location.hash}`);
+    if (activeView === "explorer") params.delete("view");
+    else params.set("view", activeView);
+    const search = params.toString();
+    const next = `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`;
+    if (next !== window.location.pathname + window.location.search + window.location.hash) {
+      window.history.replaceState(null, "", next);
+    }
   }, [activeView]);
 
   useEffect(() => {
@@ -164,6 +170,12 @@ function App() {
     setFlyToRequest((current) => ({ lat: place.lat, lon: place.lon, requestId: (current?.requestId ?? 0) + 1 }));
     setStatusMessage(`${place.label} locked. Globe centered; loading observations for this area.`);
   }, [updateQuery]);
+
+  const handleMapClick = useCallback((point: { lat: number; lon: number }) => {
+    const lat = Math.max(-90, Math.min(90, Math.round(point.lat * 10000) / 10000));
+    const lon = ((Math.round(point.lon * 10000) / 10000 + 540) % 360) - 180;
+    lockPlace({ label: `Map point ${lat.toFixed(3)}, ${lon.toFixed(3)}`, lat, lon, radiusKm: query.radiusKm, source: "place" });
+  }, [lockPlace, query.radiusKm]);
 
   const setStartDate = (value: string) => {
     if (!value) return;
@@ -259,7 +271,7 @@ function App() {
                 </div>
                 <p>Pyra shows satellite-observed fire hotspots on an interactive globe. Lock an area, pick a time range, and every panel — globe, calendar, chart, count — reads the same query result.</p>
                 <p>Detections come from NASA FIRMS (MODIS + VIIRS). A hotspot is a detection, not a confirmed wildfire, and zero detections do not prove no fire occurred.</p>
-                <p>Scrubbing the timeline runs a real historical query and replaces the markers. Use your location once per tap; it is never tracked or stored.</p>
+                <p>Scrubbing the timeline runs a real historical query and replaces the markers. Use your location once per tap.</p>
               </div>
             </>
           )}
@@ -268,6 +280,9 @@ function App() {
             <button type="button" onClick={() => handleZoom("in")} aria-label="Zoom in">+</button>
             <button type="button" onClick={() => handleZoom("out")} aria-label="Zoom out">-</button>
           </div>
+          <div className="globe-search" role="search" aria-label="Search and lock an area on the globe">
+            <PlaceSearch areaLabel={query.areaLabel} center={query.center} radiusKm={query.radiusKm} onLock={lockPlace} />
+          </div>
           <div className="globe-legend" aria-label="Hotspot marker legend">
             <span className="globe-legend-swatch" aria-hidden="true" />
             <span>Hotspot · brighter = higher FRP</span>
@@ -275,20 +290,13 @@ function App() {
             <span>Selected</span>
           </div>
           <Suspense fallback={<div className="globe-loading">Loading globe...</div>}>
-              <GlobeView containerRef={globeContainerRef} observations={observations} selectedObservationId={selectedObservationId} onSelectObservation={handleSelectObservation} zoomRequest={zoomRequest} resetRequestId={resetRequestId} flyTo={flyToRequest} onReady={handleGlobeReady} />
+              <GlobeView containerRef={globeContainerRef} observations={observations} selectedObservationId={selectedObservationId} onSelectObservation={handleSelectObservation} onMapClick={handleMapClick} zoomRequest={zoomRequest} resetRequestId={resetRequestId} flyTo={flyToRequest} onReady={handleGlobeReady} />
             </Suspense>
             {bootVisible && (
               <div className={`boot-screen${booted ? " boot-done" : ""}`} role="status" aria-label="Loading Pyra">
                 <div className="boot-mark">Pyra<span className="boot-dot" aria-hidden="true">.</span></div>
               </div>
             )}
-        </section>
-
-        <section className="panel search-panel" aria-label="Search and lock an area">
-          <div className="panel-heading"><div className="eyebrow">01 / AREA</div><span className="state-pill">{snapshot.state === "loading" ? "UPDATING" : "READY"}</span></div>
-          <h2>Search a place or use your location.</h2>
-          <p className="muted">Locking an area runs the observation query for the historical timeline below.</p>
-          <PlaceSearch areaLabel={query.areaLabel} center={query.center} radiusKm={query.radiusKm} onLock={lockPlace} />
         </section>
 
         <section className="timeline-panel" aria-label="Historical timeline">
@@ -312,7 +320,7 @@ function App() {
             <div className="panel-heading"><h2>Locked area</h2><span className="state-pill">{snapshot.state === "loading" ? "UPDATING" : "READY"}</span></div>
             <strong>{query.areaLabel}</strong>
             <span className="muted">{query.areaSource === "default" ? "Whole Earth · all longitudes and latitudes" : `${query.center.lat.toFixed(3)}° ${query.center.lat < 0 ? "S" : "N"}, ${Math.abs(query.center.lon).toFixed(3)}° ${query.center.lon < 0 ? "W" : "E"} · ${query.radiusKm} km radius`}</span>
-            <span className="muted">Change it in Search above the timeline. Current location is used once per tap and never stored.</span>
+            <span className="muted">Change it in Search on the globe. Current location is used once per tap and never stored.</span>
           </section>
           <section className="panel observation-panel">
             <div className="panel-heading"><h2>Selected observation</h2><span className="source-label">{selectedObservation?.source.toUpperCase() ?? "—"}</span></div>
@@ -326,7 +334,7 @@ function App() {
             {snapshot.synthetic && <span className="synthetic-label">Synthetic fixture data · not FIRMS observations</span>}
             <HistoricalComparison comparison={snapshot.comparison?.data ?? null} query={query} synthetic={snapshot.comparison?.synthetic ?? false} />
             <ActivityChart monthly={monthlyBuckets} daily={dailyBuckets} selectedMonth={query.selectedMonth} compact />
-            <BurningCalendar buckets={monthlyBuckets} selectedMonth={query.selectedMonth} onSelectMonth={setMonth} />
+            <BurningCalendar buckets={yearBuckets} selectedMonth={query.selectedMonth} onSelectMonth={setMonth} />
             <ExportTools observations={snapshot.data?.data ?? []} query={query} retrievedAt={snapshot.retrievedAt} synthetic={snapshot.synthetic} />
           </section>
         </aside>

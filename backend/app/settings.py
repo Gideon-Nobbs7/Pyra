@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     cache_backend: str = "lru"
     watch_bboxes: str = ""
     worker_enabled: bool = False
-    worker_interval_s: int = 3600
+    worker_interval_s: int = 10
     worker_recent_days: int = 7
     worker_max_jobs: int = 3
 
@@ -43,6 +43,25 @@ class _PlainSettings(Settings):
     """Process env only. No dotenv file (hermetic tests)."""
 
     model_config = SettingsConfigDict(env_file=None, extra="ignore")
+
+
+def _drop_empty_env_masked_by(dotenv_file) -> None:
+    """An explicitly empty env var must not mask a real value in the dotenv file.
+
+    Empty exports (lingering `export FOO=` / `$env:FOO=""`) are the common
+    way a configured tier silently disappears. Only empty strings are
+    dropped, and only when the file holds a non-empty value for that key.
+    """
+    try:
+        from dotenv import dotenv_values
+
+        file_values = dotenv_values(dotenv_file)
+    except Exception:
+        return
+    for field in Settings.model_fields:
+        env_name = field.upper()
+        if os.environ.get(env_name) == "" and file_values.get(env_name):
+            del os.environ[env_name]
 
 
 def get_settings() -> Settings:
@@ -55,7 +74,9 @@ def get_settings() -> Settings:
                 env_file=override, env_file_encoding="utf-8", extra="ignore"
             )
 
+        _drop_empty_env_masked_by(override)
         return _FileSettings()
     if override is not None:
         return _PlainSettings()
+    _drop_empty_env_masked_by(_ROOT_ENV)
     return Settings()

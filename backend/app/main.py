@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api.v1 import comparison, health, metadata, observations, summary
+from app.api.v1 import comparison, health, metadata, observations, places, summary
 
 logging.basicConfig(level="INFO", format="%(levelname)s %(name)s %(message)s")
 log = logging.getLogger("pyra.main")
@@ -24,6 +24,16 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
         from scripts import ingest_worker
 
         settings = get_settings()
+        configured = "+".join(
+            name
+            for name, value in (
+                ("primary", settings.database_url),
+                ("fallback", settings.database_url_fallback),
+                ("local", settings.database_url_local),
+            )
+            if value
+        )
+        log.info("database tiers configured: %s", configured or "none (fixture mode)")
         if settings.worker_enabled:
             areas = ingest_worker.parse_watch_bboxes(settings.watch_bboxes)
             task = asyncio.create_task(
@@ -56,6 +66,7 @@ app.include_router(observations.router, prefix="/api/v1", tags=["observations"])
 app.include_router(summary.router, prefix="/api/v1", tags=["summary"])
 app.include_router(comparison.router, prefix="/api/v1", tags=["comparison"])
 app.include_router(metadata.router, prefix="/api/v1", tags=["metadata"])
+app.include_router(places.router, prefix="/api/v1", tags=["places"])
 
 
 @app.get("/")

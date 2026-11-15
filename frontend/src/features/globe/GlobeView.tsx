@@ -17,6 +17,7 @@ export type GlobeViewProps = {
   observations: GlobeObservation[];
   selectedObservationId: string | null;
   onSelectObservation: (observationId: string | null) => void;
+  onMapClick?: (point: { lat: number; lon: number }) => void;
   zoomRequest?: {
     direction: "in" | "out";
     requestId: number;

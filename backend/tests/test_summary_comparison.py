@@ -106,3 +106,13 @@ def test_comparison_rejects_bad_params():
     assert r.status_code == 422
     r = c.get("/api/v1/comparison", params={"start": START, "end": END, "bbox": BBOX, "wat": "1"})
     assert r.status_code == 422
+
+
+def test_baseline_warning_names_missing_baseline():
+    from app.api.v1.comparison import _baseline_warning
+
+    base = "Baseline context."
+    assert _baseline_warning(base, [3, 5]) == base
+    missing = _baseline_warning(base, [])
+    assert missing.startswith(base)
+    assert "no historical baseline could be computed" in missing

@@ -27,6 +27,7 @@ export type SnapshotView = {
   message?: string;
   summary: ApiResult<SummaryResponse> | null;
   dailySummary: ApiResult<SummaryResponse> | null;
+  yearSummary: ApiResult<SummaryResponse> | null;
   comparison: ApiResult<ComparisonResponse> | null;
 };
 
@@ -149,6 +150,7 @@ function mapApiResult(result: ApiResult<ObservationPage>, selection: QuerySelect
     message: result.message,
     summary: null,
     dailySummary: null,
+    yearSummary: null,
     comparison: null
   };
 }
@@ -181,9 +183,10 @@ export function useSnapshotQuery() {
   const [query, setQuery] = useState<QuerySelection>(readSelectionFromUrl);
   const [snapshot, setSnapshot] = useState<SnapshotView>(() => ({
     state: "idle", query: readSelectionFromUrl(), data: null, dataQuery: null, retrievedAt: null, synthetic: false,
-    summary: null, dailySummary: null, comparison: null
+    summary: null, dailySummary: null, yearSummary: null, comparison: null
   }));
   const requestIdRef = useRef(0);
+  const dirtyRef = useRef(false);
   const lastGoodRef = useRef<SnapshotView | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const queryKey = useMemo(() => JSON.stringify(query), [query]);
@@ -191,24 +194,36 @@ export function useSnapshotQuery() {
   const retry = useCallback(() => setRetryCount((count) => count + 1), []);
 
   useEffect(() => {
-    writeSelectionToUrl(query);
+    // Leave a fresh URL bare: only persist once the user acts or the URL
+    // already carries a selection (share link, back/forward navigation).
+    if (dirtyRef.current || window.location.search.length > 1) writeSelectionToUrl(query);
     const controller = new AbortController();
     const requestId = ++requestIdRef.current;
     const requestedQuery = toObservationQuery(query);
-    setSnapshot({ state: "loading", query, data: null, dataQuery: null, retrievedAt: null, synthetic: false, summary: null, dailySummary: null, comparison: null });
+    setSnapshot({ state: "loading", query, data: null, dataQuery: null, retrievedAt: null, synthetic: false, summary: null, dailySummary: null, yearSummary: null, comparison: null });
 
     // Live mode is an observations-only pull: summary, comparison, and CSV keep
     // the stored archive for the same filters so the panels stay comparable.
     const storedQuery = { ...requestedQuery };
     delete storedQuery.live;
+    // Year-wide monthly buckets feed the burning activity calendar so all
+    // twelve months of the selected year render with figures and color.
+    // Stored archive, like the chart: live mode never changes history.
+    const year = query.selectedMonth.slice(0, 4);
     void Promise.all([
       apiClient.getObservations(requestedQuery, { signal: controller.signal }),
       apiClient.getSummary({ ...storedQuery, interval: "month" }, { signal: controller.signal }),
       apiClient.getSummary({ ...storedQuery, interval: "day" }, { signal: controller.signal }),
+      apiClient.getSummary({
+        ...storedQuery,
+        interval: "month",
+        start: `${year}-01-01T00:00:00.000Z`,
+        end: `${year}-12-31T23:59:59.999Z`
+      }, { signal: controller.signal }),
       apiClient.getComparison(storedQuery, { signal: controller.signal })
-    ]).then(([result, summary, dailySummary, comparison]) => {
+    ]).then(([result, summary, dailySummary, yearSummary, comparison]) => {
       if (controller.signal.aborted || requestId !== requestIdRef.current) return;
-      const next = { ...mapApiResult(result, query), summary, dailySummary, comparison };
+      const next = { ...mapApiResult(result, query), summary, dailySummary, yearSummary, comparison };
       if (result.state === "error" && lastGoodRef.current?.data) {
         const lastGood = lastGoodRef.current;
         setSnapshot({
@@ -229,12 +244,16 @@ export function useSnapshotQuery() {
   }, [queryKey, retryCount]);
 
   useEffect(() => {
-    const handlePopState = () => setQuery(readSelectionFromUrl());
+    const handlePopState = () => {
+      dirtyRef.current = window.location.search.length > 1;
+      setQuery(readSelectionFromUrl());
+    };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   const updateQuery = useCallback((update: Partial<QuerySelection>) => {
+    dirtyRef.current = true;
     setQuery((current) => ({ ...current, ...update }));
   }, []);
 

@@ -19,6 +19,7 @@ import type {
   ObservationPage,
   ObservationQuery,
   ObservationSummaryQuery,
+  PlaceResponse,
   SummaryResponse
 } from "./types";
 
@@ -91,6 +92,13 @@ function isComparisonResponse(value: unknown): value is ComparisonResponse {
     (value.baseline.sample_years === undefined || (Array.isArray(value.baseline.sample_years) && value.baseline.sample_years.every((year) => typeof year === "number"))) &&
     isRecord(value.anomaly) && typeof value.anomaly.count_delta === "number" &&
     (value.anomaly.direction === "above" || value.anomaly.direction === "below" || value.anomaly.direction === "at_baseline") && isContext(value);
+}
+
+function isPlaceResponse(value: unknown): value is PlaceResponse {
+  return isRecord(value) && Array.isArray(value.data) && value.data.every((item) =>
+    isRecord(item) && nullableString(item.name) && nullableString(item.city) &&
+    nullableString(item.state) && nullableString(item.country) &&
+    typeof item.latitude === "number" && typeof item.longitude === "number");
 }
 
 function isHealthResponse(value: unknown): value is HealthResponse {
@@ -265,7 +273,21 @@ export function createApiClient(options: ApiClientOptions = {}) {
       () => new Blob([syntheticCsv(query)], { type: "text/csv;charset=utf-8" }),
       "text/csv"
     ),
-    getMetadata: () => get("/metadata", isMetadataResponse, () => syntheticMetadata)
+    getMetadata: () => get("/metadata", isMetadataResponse, () => syntheticMetadata),
+    getPlaces: (
+      query: { q: string; limit?: number; lang?: string },
+      requestOptions: ApiRequestOptions = {}
+    ) => get(
+      `/places?${new URLSearchParams({
+        q: query.q,
+        ...(query.limit !== undefined ? { limit: String(query.limit) } : {}),
+        ...(query.lang ? { lang: query.lang } : {})
+      }).toString()}`,
+      isPlaceResponse,
+      () => ({ data: [] }),
+      "application/json",
+      requestOptions.signal
+    )
   };
 }
 

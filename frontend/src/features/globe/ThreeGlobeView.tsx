@@ -548,6 +548,7 @@ export function ThreeGlobeView({
   observations,
   selectedObservationId,
   onSelectObservation,
+  onMapClick,
   zoomRequest,
   resetRequestId,
   flyTo,
@@ -564,6 +565,8 @@ export function ThreeGlobeView({
   const lastFlyToRequestRef = useRef(0);
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
+  const onMapClickRef = useRef(onMapClick);
+  onMapClickRef.current = onMapClick;
   const readyFiredRef = useRef(false);
 
   useEffect(() => {
@@ -792,6 +795,21 @@ export function ThreeGlobeView({
       onSelectObservation(
         hit?.index === undefined ? null : observationIdsRef.current[hit.index] ?? null
       );
+      if (hit?.index === undefined && onMapClickRef.current) {
+        // Empty globe click: report the surface lat/lon so the app can lock
+        // it as the query center (inverse of observationPosition).
+        const [surface] = raycaster.intersectObject(earth);
+        if (surface) {
+          const local = globeGroup.worldToLocal(surface.point.clone()).normalize();
+          const lat = THREE.MathUtils.radToDeg(
+            Math.asin(THREE.MathUtils.clamp(local.y, -1, 1))
+          );
+          const lon = THREE.MathUtils.radToDeg(Math.atan2(local.x, local.z));
+          if (Number.isFinite(lat) && Number.isFinite(lon)) {
+            onMapClickRef.current({ lat, lon });
+          }
+        }
+      }
       pointerDown = null;
     };
     renderer.domElement.addEventListener("pointerdown", onPointerDown);

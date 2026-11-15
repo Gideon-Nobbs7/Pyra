@@ -225,9 +225,15 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     interval = args.interval or settings.worker_interval_s
     recent_days = args.recent_days or settings.worker_recent_days
-    if interval < 60:
-        print("--interval/ WORKER_INTERVAL_S must be >= 60s (provider quota)", file=sys.stderr)
+    if interval < 10:
+        print("--interval/ WORKER_INTERVAL_S must be >= 10s", file=sys.stderr)
         return 2
+    if interval < 60:
+        log.warning(
+            "interval %ds is below the 60s provider-quota guideline; "
+            "the 60s per-call provider throttle still applies",
+            interval,
+        )
     if threading.current_thread() is threading.main_thread():
         signal.signal(signal.SIGTERM, _handle_stop)
         signal.signal(signal.SIGINT, _handle_stop)

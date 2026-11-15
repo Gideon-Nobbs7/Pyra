@@ -68,6 +68,7 @@ h1 { margin-top: 7px; font-size: clamp(26px, 2.4vw, 36px); }
 .globe-canvas { position: absolute; inset: 0; touch-action: none; }
 .globe-canvas canvas { display: block; width: 100%; height: 100%; }
 .globe-controls { position: absolute; z-index: 3; top: 118px; right: 22px; display: flex; flex-direction: column; gap: 8px; }
+.globe-search { position: absolute; z-index: 3; left: 22px; bottom: 22px; width: min(300px, calc(100% - 44px)); max-height: calc(100% - 44px); overflow: auto; padding: 12px 13px; border: 1px solid #2e454a; border-radius: 12px; background: rgba(11, 19, 24, 0.92); }
 .globe-controls button { width: 40px; height: 40px; border-radius: 10px; font-size: 19px; }
 .globe-loading { position: absolute; inset: 0; display: grid; place-items: center; color: #a9b6be; font-size: 13px; }
 .globe-legend { position: absolute; z-index: 3; right: 22px; bottom: 22px; display: flex; align-items: center; gap: 7px; padding: 8px 11px; color: #a9b6be; border: 1px solid #2e454a; border-radius: 9px; background: rgba(11, 19, 24, 0.92); font-size: 11px; pointer-events: none; }
@@ -151,7 +152,7 @@ h1 { margin-top: 7px; font-size: clamp(26px, 2.4vw, 36px); }
 .calendar-cell-low { background: #34523e; }
 .calendar-cell-medium { background: #80602d; }
 .calendar-cell-high { background: #a44c31; }
-.calendar-cell-unreported { color: #71808a; background: #0a1014; border-style: dashed; }
+.calendar-cell-unreported { color: #71808a; background: repeating-linear-gradient(45deg, #0a1014 0 4px, #223038 4px 5px); border-style: dashed; }
 .calendar-cell-selected { outline: 2px solid #f4b36a; outline-offset: 1px; }
 .calendar-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; color: #87959e; font-size: 9px; }
 .calendar-legend i { width: 11px; height: 11px; border: 1px solid #45535a; border-radius: 3px; }
@@ -255,6 +256,7 @@ h1 { margin-top: 7px; font-size: clamp(26px, 2.4vw, 36px); }
   .globe-heading { padding: 16px 18px; }
   .globe-heading p { font-size: 11px; }
   .globe-legend { right: 14px; bottom: 14px; font-size: 9px; padding: 7px 9px; }
+  .globe-search { left: 14px; bottom: 14px; width: min(250px, calc(100% - 28px)); padding: 10px 11px; }
   .inspector { grid-template-columns: 1fr; }
   .inspector > .query-panel { grid-column: auto; grid-template-columns: 1fr; }
   .query-panel > .panel-heading, .query-panel > .muted, .query-panel > .synthetic-label { grid-column: auto; }

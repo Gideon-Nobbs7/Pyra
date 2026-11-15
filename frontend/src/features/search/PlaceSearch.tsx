@@ -1,11 +1,8 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { apiClient } from "../../api";
+import type { PlaceSuggestion } from "../../api/types";
 
 export type LockedPlace = { label: string; lat: number; lon: number; radiusKm: number; source: "place" | "coordinates" | "location" };
-
-type PlaceFeature = {
-  geometry: { coordinates: [number, number] };
-  properties: Record<string, unknown>;
-};
 
 type Props = {
   areaLabel: string;
@@ -14,31 +11,32 @@ type Props = {
   onLock: (place: LockedPlace) => void;
 };
 
-function featureLabel(properties: Record<string, unknown>): string {
-  const parts = [properties.name, properties.city, properties.state, properties.country]
+function placeLabel(suggestion: PlaceSuggestion): string {
+  const parts = [suggestion.name, suggestion.city, suggestion.state, suggestion.country]
     .filter((part): part is string => typeof part === "string" && part.trim().length > 0);
   return [...new Set(parts)].join(", ") || "Unnamed place";
 }
 
-function isFeature(value: unknown): value is PlaceFeature {
-  if (!value || typeof value !== "object") return false;
-  const item = value as Record<string, unknown>;
-  if (!item.geometry || typeof item.geometry !== "object" || !item.properties || typeof item.properties !== "object") return false;
-  const coordinates = (item.geometry as { coordinates?: unknown }).coordinates;
-  return Array.isArray(coordinates) && coordinates.length >= 2 &&
-    typeof coordinates[0] === "number" && Number.isFinite(coordinates[0]) && Math.abs(coordinates[0]) <= 180 &&
-    typeof coordinates[1] === "number" && Number.isFinite(coordinates[1]) && Math.abs(coordinates[1]) <= 90;
+function placeSubline(suggestion: PlaceSuggestion): string {
+  const parts = [suggestion.city, suggestion.state, suggestion.country]
+    .filter((part): part is string => typeof part === "string" && part.trim().length > 0);
+  return [...new Set(parts)].join(", ");
+}
+
+function coordinateText(value: number): string {
+  if (!Number.isFinite(value)) return "";
+  return String(Math.round(value * 10000) / 10000);
 }
 
 export function PlaceSearch({ areaLabel, center, radiusKm, onLock }: Props) {
   const searchId = useId();
   const listId = `${searchId}-places`;
   const [searchText, setSearchText] = useState("");
-  const [suggestions, setSuggestions] = useState<PlaceFeature[]>([]);
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [searchMessage, setSearchMessage] = useState("");
-  const [latText, setLatText] = useState(String(center.lat));
-  const [lonText, setLonText] = useState(String(center.lon));
+  const [latText, setLatText] = useState(coordinateText(center.lat));
+  const [lonText, setLonText] = useState(coordinateText(center.lon));
   const [radiusText, setRadiusText] = useState(String(radiusKm));
   const [locationMessage, setLocationMessage] = useState("");
   const [pending, setPending] = useState(false);
@@ -46,8 +44,8 @@ export function PlaceSearch({ areaLabel, center, radiusKm, onLock }: Props) {
   const selectedLabelRef = useRef("");
 
   useEffect(() => {
-    setLatText(String(center.lat));
-    setLonText(String(center.lon));
+    setLatText(coordinateText(center.lat));
+    setLonText(coordinateText(center.lon));
     setRadiusText(String(radiusKm));
   }, [center.lat, center.lon, radiusKm]);
 
@@ -63,21 +61,21 @@ export function PlaceSearch({ areaLabel, center, radiusKm, onLock }: Props) {
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       setPending(true);
-      const params = new URLSearchParams({ q: term, limit: "6", lang: "en" });
-      void fetch(`https://photon.komoot.io/api/?${params}`, { signal: controller.signal })
-        .then(async (response) => {
-          if (!response.ok) throw new Error("Place search is temporarily unavailable.");
-          const payload: unknown = await response.json();
-          if (!payload || typeof payload !== "object" || !Array.isArray((payload as { features?: unknown }).features)) {
-            throw new Error("Place search returned an invalid response.");
-          }
-          return (payload as { features: unknown[] }).features.filter(isFeature).slice(0, 6);
-        })
-        .then((features) => {
+      void apiClient.getPlaces({ q: term, limit: 6, lang: "en" }, { signal: controller.signal })
+        .then((result) => {
           if (controller.signal.aborted) return;
-          setSuggestions(features);
+          if (result.data === null) {
+            setSuggestions([]);
+            setSearchMessage(result.message ?? "Place search failed.");
+            return;
+          }
+          const matches = result.data.data.filter((item) =>
+            Number.isFinite(item.latitude) && Number.isFinite(item.longitude) &&
+            Math.abs(item.latitude) <= 90 && Math.abs(item.longitude) <= 180
+          ).slice(0, 6);
+          setSuggestions(matches);
           setActiveIndex(-1);
-          setSearchMessage(features.length ? `${features.length} places found.` : "No places found.");
+          setSearchMessage(matches.length ? `${matches.length} places found.` : "No places found.");
         })
         .catch((error: unknown) => {
           if (controller.signal.aborted) return;
@@ -94,14 +92,14 @@ export function PlaceSearch({ areaLabel, center, radiusKm, onLock }: Props) {
     };
   }, [searchText]);
 
-  const selectFeature = (feature: PlaceFeature) => {
-    const [lon, lat] = feature.geometry.coordinates;
-    const label = featureLabel(feature.properties);
+  const selectFeature = (feature: PlaceSuggestion) => {
+    const { latitude: lat, longitude: lon } = feature;
+    const label = placeLabel(feature);
     const typedRadius = Number(radiusText);
     const selectedRadius = Number.isFinite(typedRadius) && typedRadius >= 1 && typedRadius <= 500 ? typedRadius : radiusKm;
     onLock({ label, lat, lon, radiusKm: selectedRadius, source: "place" });
-    setLatText(String(lat));
-    setLonText(String(lon));
+    setLatText(coordinateText(lat));
+    setLonText(coordinateText(lon));
     setRadiusText(String(selectedRadius));
     selectedLabelRef.current = label;
     setSearchText(label);
@@ -134,8 +132,8 @@ export function PlaceSearch({ areaLabel, center, radiusKm, onLock }: Props) {
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         const label = `Current location ${coords.latitude.toFixed(3)}, ${coords.longitude.toFixed(3)}`;
-        setLatText(String(coords.latitude));
-        setLonText(String(coords.longitude));
+        setLatText(coordinateText(coords.latitude));
+        setLonText(coordinateText(coords.longitude));
         onLock({ label, lat: coords.latitude, lon: coords.longitude, radiusKm, source: "location" });
         setLocationMessage("Current location locked for this search. It is not being tracked or stored.");
       },
@@ -182,9 +180,9 @@ export function PlaceSearch({ areaLabel, center, radiusKm, onLock }: Props) {
         {suggestions.length > 0 && (
           <div className="place-suggestions" id={listId} role="listbox" aria-label="Place suggestions">
             {suggestions.map((feature, index) => (
-              <button key={`${feature.geometry.coordinates.join(",")}-${featureLabel(feature.properties)}`} id={`${listId}-${index}`} type="button" role="option" aria-selected={activeIndex === index} onMouseDown={(event) => event.preventDefault()} onClick={() => selectFeature(feature)}>
-                  <strong>{String(feature.properties.name ?? "Unnamed place")}</strong>
-                  <span>{featureLabel(feature.properties)}</span>
+              <button key={`${feature.longitude},${feature.latitude}-${placeLabel(feature)}`} id={`${listId}-${index}`} type="button" role="option" aria-selected={activeIndex === index} onMouseDown={(event) => event.preventDefault()} onClick={() => selectFeature(feature)}>
+                  <strong>{feature.name ?? "Unnamed place"}</strong>
+                  <span>{placeSubline(feature) || placeLabel(feature)}</span>
               </button>
             ))}
           </div>

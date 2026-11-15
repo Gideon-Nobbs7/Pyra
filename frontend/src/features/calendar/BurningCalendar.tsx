@@ -21,13 +21,19 @@ export function BurningCalendar({ buckets, selectedMonth, onSelectMonth }: {
     const month = bucket.start.slice(0, 7);
     if (month.startsWith(`${year}-`)) counts.set(month, (counts.get(month) ?? 0) + bucket.count);
   }
+  // The year summary returns only months with detections; a queried month
+  // with no stored rows is a zero for this view, not a missing value.
+  for (let index = 0; index < 12; index += 1) {
+    const key = `${year}-${String(index + 1).padStart(2, "0")}`;
+    if (!counts.has(key)) counts.set(key, 0);
+  }
   return (
     <section className="burning-calendar" aria-labelledby="burning-calendar-title">
       <div className="section-title-row"><h3 id="burning-calendar-title">Burning activity calendar</h3><span className="muted">{year} · selected area</span></div>
       <div className="calendar-grid" role="group" aria-label={`Monthly hotspot detections for ${year}`}>
         {MONTHS.map((label, index) => {
           const key = `${year}-${String(index + 1).padStart(2, "0")}`;
-          const count = counts.get(key);
+          const count = counts.get(key) ?? 0;
           return <button key={key} type="button" className={`calendar-cell ${intensity(count)} ${selectedMonth === key ? "calendar-cell-selected" : ""}`} onClick={() => onSelectMonth(key)} aria-pressed={selectedMonth === key} aria-label={`${label} ${year}: ${count === undefined ? "count not provided" : `${count} detections`}. Select month.`}>
             <span>{label}</span><strong>{count === undefined ? "—" : count.toLocaleString()}</strong>
           </button>;
