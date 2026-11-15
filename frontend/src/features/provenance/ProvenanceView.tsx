@@ -51,11 +51,6 @@ export function ProvenanceView() {
           </>}
         </section>
         <section className="provenance-panel provenance-wide">
-          <h2>Harmonization method</h2>
-          {response?.harmonization.method ? <p>{response.harmonization.method}</p> : <p className="comparability-warning">The harmonization method document is not present in this checkout. Do not treat cross-sensor counts as fully comparable until the method and product semantics are documented.</p>}
-          <p className="muted">Method citation: {response?.harmonization.documentation_url ?? "not provided"}</p>
-        </section>
-        <section className="provenance-panel provenance-wide">
           <h2>Detection limits</h2>
           <ul className="limitations-list">
             <li>A hotspot is a satellite detection, not a confirmed wildfire, fire perimeter, or measurement of burned area.</li>

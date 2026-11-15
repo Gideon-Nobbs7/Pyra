@@ -11,6 +11,13 @@ function detailValue(observation: Observation, keys: string[]): unknown {
   return null;
 }
 
+const CONFIDENCE_LABELS: Record<string, string> = { l: "Low", low: "Low", n: "Nominal", nominal: "Nominal", h: "High", high: "High" };
+
+export function confidenceLabel(value: string | number | null): string {
+  if (value === null || value === undefined || value === "") return "not provided";
+  return CONFIDENCE_LABELS[String(value).trim().toLowerCase()] ?? String(value);
+}
+
 export function ObservationDetails({ observation, corroborated }: { observation: Observation | null; corroborated?: boolean | null }) {
   if (!observation) return <p className="muted">Select a row or globe marker to inspect an observation.</p>;
   const pass = detailValue(observation, ["day_night", "pass"]);
@@ -26,7 +33,7 @@ export function ObservationDetails({ observation, corroborated }: { observation:
       <div><dt>Latitude</dt><dd>{display(observation.latitude)}</dd></div>
       <div><dt>Longitude</dt><dd>{display(observation.longitude)}</dd></div>
       <div><dt>Pass</dt><dd>{display(pass)}</dd></div>
-      <div><dt>Confidence</dt><dd>{display(observation.confidence)}</dd></div>
+      <div><dt>Confidence</dt><dd>{confidenceLabel(observation.confidence)}</dd></div>
       <div><dt>FRP</dt><dd>{display(observation.frp)} {observation.frp === null ? "" : display(observation.frp_unit)}</dd></div>
       <div><dt title="Seen by both MODIS and VIIRS in the same cell on the same day">Cross-sensor corroboration</dt><dd>{crossSensor === null ? "not provided" : crossSensor ? "Yes — both sensors saw it" : "No — one sensor only"}</dd></div>
       <div><dt>Quality flags</dt><dd>{display(observation.quality_flags)}</dd></div>

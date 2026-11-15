@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { Observation } from "../../api/types";
 import type { QuerySelection } from "../../query/useSnapshotQuery";
 import { ExportTools } from "../export/ExportTools";
-import { buildCorroborationMap, getObservationPass, resolveCorroboration } from "../details/ObservationDetails";
+import { buildCorroborationMap, confidenceLabel, getObservationPass, resolveCorroboration } from "../details/ObservationDetails";
 import { ObservationDetails } from "../details/ObservationDetails";
 
 type Sensor = "all" | "modis" | "viirs";
@@ -33,12 +33,12 @@ export function RecordsWorkbench({ observations, selectedId, onSelect, query, re
   const [sort, setSort] = useState<Sort>("time");
   const [search, setSearch] = useState("");
 
-  const confidenceOptions = useMemo(() => [...new Set(observations.map((item) => item.confidence === null ? "not provided" : String(item.confidence)))].sort(), [observations]);
+  const confidenceOptions = useMemo(() => [...new Set(observations.map((item) => confidenceLabel(item.confidence)))].sort(), [observations]);
   const corroborationMap = useMemo(() => buildCorroborationMap(observations), [observations]);
   const filtered = useMemo(() => observations.filter((item) => {
     const itemPass = getObservationPass(item);
     const itemCorroboration = resolveCorroboration(item, corroborationMap);
-    const confidenceText = item.confidence === null ? "not provided" : String(item.confidence);
+    const confidenceText = confidenceLabel(item.confidence);
     const matchesSearch = !search || `${item.id} ${item.platform ?? ""} ${item.instrument ?? ""}`.toLowerCase().includes(search.toLowerCase());
     return (sensor === "all" || item.source === sensor) &&
       (pass === "all" || (pass === "not-provided" ? itemPass === null : itemPass === pass)) &&
@@ -80,7 +80,7 @@ export function RecordsWorkbench({ observations, selectedId, onSelect, query, re
               <td>{getObservationPass(item) ?? "not provided"}</td>
               <td>{textValue(item.observed_at)}</td>
               <td>{textValue(item.ingested_at)}</td>
-              <td>{textValue(item.confidence)}</td>
+              <td>{confidenceLabel(item.confidence)}</td>
               <td>{item.frp === null ? "not provided" : `${item.frp} ${textValue(item.frp_unit)}`}</td>
               <td>{corroborationLabel(resolveCorroboration(item, corroborationMap))}</td>
             </tr>)}
