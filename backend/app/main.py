@@ -5,9 +5,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api.v1 import comparison, health, metadata, observations, places, summary
+from app.settings import get_settings
 
 logging.basicConfig(level="INFO", format="%(levelname)s %(name)s %(message)s")
 log = logging.getLogger("pyra.main")
+
+
+def cors_allowed_origins(raw: str) -> list[str]:
+    """Comma-separated CORS_ORIGINS → origin allowlist. Empty means same-origin only."""
+    return [part.strip() for part in raw.split(",") if part.strip()]
 
 
 @asynccontextmanager
@@ -81,6 +87,19 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
 
 
 app = FastAPI(title="Pyra", version="0.1.0", lifespan=lifespan)
+
+_cors_origins = cors_allowed_origins(get_settings().cors_origins)
+if _cors_origins:
+    from fastapi.middleware.cors import CORSMiddleware
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins,
+        allow_methods=["GET", "OPTIONS"],
+        allow_headers=["Accept"],
+        max_age=600,
+    )
+    log.info("CORS enabled for: %s", ", ".join(_cors_origins))
 
 app.include_router(health.router, prefix="/api/v1", tags=["health"])
 app.include_router(observations.router, prefix="/api/v1", tags=["observations"])

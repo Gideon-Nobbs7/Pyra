@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     worker_interval_s: int = 10
     worker_recent_days: int = 7
     worker_max_jobs: int = 3
+    cors_origins: str = ""
     database_connect_timeout: int = 12
     database_pool_min_size: int = 1
     database_pool_max_size: int = 10
