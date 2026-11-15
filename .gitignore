@@ -238,3 +238,6 @@ pnpm-debug.log*
 *-key.json
 practical-theme-*.json
 .service-account*.json
+
+screenshots
+docs/demo*
