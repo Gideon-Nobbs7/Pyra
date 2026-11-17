@@ -1,18 +1,3 @@
-"""Central settings: environment variables with automatic root .env loading.
-
-BaseSettings reads process env first, then the repo-root `.env`, so `uvicorn`
-picks up keys with no shell exports and regardless of the working directory.
-Real environment variables always win over the file.
-
-A fresh instance is built per call: tests mutate process env mid-test
-(setenv/delenv) and must always see live values, so settings are never
-cached. The dotenv file is tiny; the parse cost is negligible.
-
-`PYRA_ENV_FILE` overrides the dotenv source. Unset: repo-root `.env`.
-Set to a path: that file. Set but empty: no file at all (hermetic tests,
-set by the autouse fixture in conftest).
-"""
-
 import os
 from pathlib import Path
 
@@ -45,18 +30,11 @@ class Settings(BaseSettings):
 
 
 class _PlainSettings(Settings):
-    """Process env only. No dotenv file (hermetic tests)."""
 
     model_config = SettingsConfigDict(env_file=None, extra="ignore")
 
 
 def _drop_empty_env_masked_by(dotenv_file) -> None:
-    """An explicitly empty env var must not mask a real value in the dotenv file.
-
-    Empty exports (lingering `export FOO=` / `$env:FOO=""`) are the common
-    way a configured tier silently disappears. Only empty strings are
-    dropped, and only when the file holds a non-empty value for that key.
-    """
     try:
         from dotenv import dotenv_values
 
@@ -70,7 +48,7 @@ def _drop_empty_env_masked_by(dotenv_file) -> None:
 
 
 def get_settings() -> Settings:
-    """Fresh settings reflecting live process env plus the dotenv source."""
+    """Fresh settings from process env + dotenv."""
     override = os.environ.get("PYRA_ENV_FILE")
     if override:
 

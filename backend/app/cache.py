@@ -1,23 +1,3 @@
-"""Bounded in-process read-through cache with a swappable backend.
-
-Default backend is :class:`LruCacheBackend`, built on
-:func:`functools.lru_cache`. The hot lookup path is memoized by lru_cache
-(see ``stats()["lru"]``); TTL is enforced at read time and a generation
-counter orphans stale memoized entries on every write, so readers never see
-expired data. Orphaned entries are bounded by ``maxsize`` and evicted by LRU.
-
-To swap backends (e.g. Redis, a second process, or no-op for tests),
-implement :class:`CacheBackend` and select it with the ``CACHE_BACKEND``
-environment variable in :func:`build_cache`. No caller changes needed:
-routers only use ``get`` / ``put`` / ``invalidate`` / ``stats`` /
-``make_key`` / ``ttl_for`` / ``lock_for``.
-
-Key from products + start + end + bbox + limit + cursor, normalized.
-Short TTL for recent/open windows, long TTL for closed historical windows.
-Single-flight per key prevents concurrent misses from stampeding the
-database. Freshness comes from ingestion time, never from cache insert time.
-"""
-
 import asyncio
 import hashlib
 import time
@@ -40,7 +20,6 @@ class _Entry:
 
 
 class CacheBackend(Protocol):
-    """Storage contract behind the read-through cache. Implement to swap."""
 
     def get(self, key: str) -> dict | None: ...
 
@@ -52,8 +31,6 @@ class CacheBackend(Protocol):
 
 
 class LruCacheBackend:
-    """functools.lru_cache-backed store with TTL and LRU eviction."""
-
     def __init__(self, max_keys: int = MAX_KEYS) -> None:
         self._store: OrderedDict[str, _Entry] = OrderedDict()
         self._locks: dict[str, asyncio.Lock] = {}
@@ -89,8 +66,7 @@ class LruCacheBackend:
 
     @staticmethod
     def ttl_for(start_iso: str, end_iso: str) -> int:
-        # Closed historical months (same year-month, past) get long TTL.
-        # Anything else is treated as recent/open.
+        # Closed historical months get long TTL else recent TTL.
         try:
             s = start_iso[:7]
             e = end_iso[:7]
@@ -117,7 +93,7 @@ class LruCacheBackend:
     def put(self, key: str, value: dict, ttl_s: int) -> None:
         self._store[key] = _Entry(value=value, expires_at=time.monotonic() + ttl_s)
         self._store.move_to_end(key)
-        self._generation += 1  # orphan memoized reads; writes always win
+        self._generation += 1  # orphan memoized reads - writes always win
         while len(self._store) > self._max_keys:
             oldest = next(iter(self._store))
             self._store.pop(oldest)
@@ -151,12 +127,10 @@ class LruCacheBackend:
         }
 
 
-# Backwards-compatible alias: existing callers construct BoundedCache(...).
 BoundedCache = LruCacheBackend
 
 
 def build_cache(kind: str | None = None, max_keys: int = MAX_KEYS) -> LruCacheBackend:
-    """Select the cache backend. Only "lru" exists today; unknown kinds fail loud."""
     selected = (kind or get_settings().cache_backend).strip().lower()
     if selected == "lru":
         return LruCacheBackend(max_keys=max_keys)

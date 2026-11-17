@@ -1,9 +1,4 @@
-"""
-Schemas for Pyra M1 scaffold.
-
-Minimum observation fields per root guide. Nullable fields stay null.
-observed_at and ingested_at are distinct UTC timestamptz.
-"""
+"""Observation schemas: minimum fields, nulls stay null, UTC timestamps."""
 
 from datetime import datetime
 from typing import Any, Literal

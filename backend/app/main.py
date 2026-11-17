@@ -12,18 +12,11 @@ log = logging.getLogger("pyra.main")
 
 
 def cors_allowed_origins(raw: str) -> list[str]:
-    """Comma-separated CORS_ORIGINS → origin allowlist. Empty means same-origin only."""
     return [part.strip() for part in raw.split(",") if part.strip()]
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):  # noqa: ARG001
-    """Own the ingest worker: one uvicorn starts and stops both.
-
-    The worker runs in a thread (blocking provider/DB calls stay off the
-    event loop). WORKER_ENABLED=1 in root .env turns it on; an empty
-    WATCH_BBOXES list is fine — the job phase still drains user gap-fill.
-    """
+async def lifespan(app: FastAPI):
     task = None
     try:
         from app import db as db_module

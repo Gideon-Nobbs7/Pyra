@@ -1,10 +1,4 @@
-"""GET /api/v1/comparison — selected period vs historical median.
-
-The selected window's detection count is compared against the median count
-for the same calendar window across prior years in the store, same bbox and
-products. An anomaly is observed deviation from that baseline, never a
-forecast. No percentages, no division by zero: the delta is absolute.
-"""
+"""GET /api/v1/comparison: selected count vs historical median (absolute delta only)."""
 
 import logging
 import statistics
@@ -65,8 +59,7 @@ def _direction(delta: int) -> str:
 
 
 def _baseline_warning(base: str, counts: list[int]) -> str:
-    """Name a missing baseline explicitly: median 0 with no sample years
-    is not a baseline, and must never read as an anomaly anchor."""
+    """Missing-baseline warning: median 0 with no samples is not a baseline."""
     if counts:
         return base
     return (

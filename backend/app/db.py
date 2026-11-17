@@ -1,16 +1,3 @@
-"""DB layer: tiered stores with automatic failover.
-
-Chain (first reachable wins, sticky for RESOLUTION_TTL_S):
-  1. DATABASE_URL          primary  (Cloud SQL managed Postgres+PostGIS)
-  2. DATABASE_URL_FALLBACK fallback (Supabase)
-  3. DATABASE_URL_LOCAL    local    (Compose PostGIS, offline use)
-
-Freshness always names the store that answered, so fallback data is never
-presented as equally fresh. Fixtures serve only when no store is configured
-(fixture mode) — a configured-but-unreachable chain is a 503, never a silent
-empty.
-"""
-
 import threading
 import time
 
@@ -26,7 +13,6 @@ RESOLUTION_TTL_S = 60.0
 
 _ACTIVE: dict = {"url": None, "role": None, "ts": 0.0}
 
-# Parameterized query used once DB is wired. No string concatenation.
 OBSERVATIONS_SQL = """
 SELECT id, source, source_record_id, observed_at, ingested_at,
        latitude, longitude,
@@ -61,7 +47,6 @@ DB_FRESHNESS_SQL = "SELECT max(ingested_at) AS latest, count(*) AS n FROM observ
 
 
 def db_configured() -> bool:
-    # Dynamic (not import-time) so tests and process env changes take effect.
     settings = get_settings()
     return bool(settings.database_url or settings.database_url_fallback)
 
@@ -73,16 +58,12 @@ def db_status() -> str:
 
 
 def reset_resolution() -> None:
-    """Tests only: forget the sticky primary/fallback decision."""
+    """Test hook: clear sticky DB tier decision."""
     _ACTIVE.update({"url": None, "role": None, "ts": 0.0})
 
 
 def _connect_timeout(timeout: int | None = None) -> int:
-    """Single timeout for all Postgres connects (Supabase pooler needs headroom).
-
-    Measured handshakes from this network are 2-7 s; the old 3 s default
-    flaked into 503s. Override with DATABASE_CONNECT_TIMEOUT.
-    """
+    """Single connect timeout (Supabase pooler headroom)."""
     if timeout is not None:
         return timeout
     try:
@@ -96,7 +77,6 @@ _POOLS_LOCK = threading.Lock()
 
 
 def _pool_limits() -> tuple[int, int, float]:
-    """(min_size, max_size, acquire_timeout_s) from settings, clamped sane."""
     try:
         settings = get_settings()
         min_size = max(1, int(settings.database_pool_min_size))
@@ -108,12 +88,7 @@ def _pool_limits() -> tuple[int, int, float]:
 
 
 def get_pool(url: str, role: str = "query"):
-    """Borrow-or-create the ConnectionPool for one tier (thread-safe, lazy).
-
-    One pool per tier URL; min_size connections stay warm so repeat queries
-    skip the 2-7 s Supabase handshake. prepare_threshold=None keeps the pool
-    working through Supavisor/pgbouncer transaction pooling.
-    """
+    """One warm pool per tier URL (skips Supabase handshake)."""
     with _POOLS_LOCK:
         pool = _POOLS.get(url)
         if pool is not None and not pool.closed:
@@ -146,7 +121,6 @@ def get_pool(url: str, role: str = "query"):
 
 
 def close_pools() -> None:
-    """Shutdown hook + tests: close every pooled tier."""
     with _POOLS_LOCK:
         pools = list(_POOLS.values())
         _POOLS.clear()
@@ -158,7 +132,6 @@ def close_pools() -> None:
 
 
 def pool_stats() -> dict:
-    """Per-tier pool usage for health/logs. Never raises."""
     stats = {}
     with _POOLS_LOCK:
         items = list(_POOLS.items())
@@ -173,12 +146,6 @@ def pool_stats() -> dict:
 
 
 def _try_connect(url: str, timeout: int | None = None):
-    """Pooled connection context (same `with` shape as before).
-
-    The pool per tier keeps min_size warm connections, so repeat queries
-    skip the handshake. `timeout` overrides the pool acquire wait.
-    Tests may keep patching this seam with a fake connection.
-    """
     pool = get_pool(url)
     if timeout is not None:
         return pool.connection(timeout=float(timeout))
@@ -186,7 +153,7 @@ def _try_connect(url: str, timeout: int | None = None):
 
 
 def resolve_database_url() -> tuple[str, str]:
-    """Return (url, role). Cloud SQL, then Supabase, then local. Raises on total failure."""
+    """Return (url, role): primary→fallback→local. Raises if none."""
     now = time.monotonic()
     if _ACTIVE["url"] and now - _ACTIVE["ts"] < RESOLUTION_TTL_S:
         return _ACTIVE["url"], _ACTIVE["role"]
@@ -234,7 +201,7 @@ def _row_to_record(row: dict) -> dict:
 def fetch_page(
     start_iso: str, end_iso: str, bbox: list[float], products: list[str], limit: int, offset: int
 ) -> tuple[list[dict], bool]:
-    """Query one page plus one lookahead row. Raises on DB failure."""
+    """Query one page plus one lookahead row"""
     min_lon, min_lat, max_lon, max_lat = bbox
     params = {
         "start": start_iso,
@@ -269,7 +236,6 @@ WHERE observed_at >= %(start)s
 
 
 def fetch_count(start_iso: str, end_iso: str, bbox: list[float], products: list[str]) -> int:
-    """Total matching rows (uncapped). Raises on DB failure."""
     min_lon, min_lat, max_lon, max_lat = bbox
     params = {
         "start": start_iso,
@@ -289,7 +255,6 @@ def fetch_count(start_iso: str, end_iso: str, bbox: list[float], products: list[
 
 
 def fetch_freshness() -> dict:
-    """Freshness from the latest successful ingestion. Names the store. Raises on failure."""
     url, role = resolve_database_url()
     with _try_connect(url) as conn:
         with conn.cursor() as cur:

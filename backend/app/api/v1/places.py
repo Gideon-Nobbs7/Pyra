@@ -14,7 +14,7 @@ _client: httpx.AsyncClient | None = None
 
 
 def _shared_client() -> httpx.AsyncClient:
-    """Pooled keep-alive client. One TLS handshake, then sub-second repeats."""
+    """Pooled keep-alive Photon client."""
     global _client
     if _client is None:
         _client = httpx.AsyncClient(
@@ -25,7 +25,6 @@ def _shared_client() -> httpx.AsyncClient:
 
 
 async def close_client() -> None:
-    """Lifespan shutdown hook. Safe to call when never started."""
     global _client
     if _client is not None:
         await _client.aclose()
@@ -44,7 +43,7 @@ def _error(code: str, message: str, status: int) -> JSONResponse:
 
 
 def _slim_features(payload: object) -> list[dict] | None:
-    """Validate the Photon shape and slim to name/city/state/country/latlon."""
+    """Slim Photon result to name/city/state/country/latlon."""
     if not isinstance(payload, dict):
         return None
     features = payload.get("features")

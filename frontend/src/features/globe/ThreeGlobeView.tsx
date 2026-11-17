@@ -10,11 +10,7 @@ const EARTH_TEXTURE_4K_URL = `${import.meta.env.BASE_URL}textures/earth-day-4096
 const NIGHT_TEXTURE_4K_URL = `${import.meta.env.BASE_URL}textures/earth-night-4096.jpg`;
 const CLOUD_TEXTURE_4K_URL = `${import.meta.env.BASE_URL}textures/earth-clouds-alpha-4096.webp`;
 
-/**
- * The night-earth texture is a dark blue-tinted landmass map whose city lights
- * are faint. Isolate the warm lights onto black so the night-side shader can
- * show them instead of the blue wash.
- */
+/** Isolate warm city lights onto black for the night-side shader. */
 function extractCityLightsTexture(image: HTMLImageElement): THREE.CanvasTexture {
   const width = image.naturalWidth || image.width;
   const height = image.naturalHeight || image.height;
@@ -32,8 +28,7 @@ function extractCityLightsTexture(image: HTMLImageElement): THREE.CanvasTexture 
     const r = data[index];
     const g = data[index + 1];
     const b = data[index + 2];
-    // City lights burn warm; the base map wash is blue. Pixels with no warm
-    // excess go pure black so oceans stay dark on the night side.
+    // Warm excess only; else black so oceans stay dark.
     const warmth = Math.max(0, (r - b + (g - b)) / 2 / 255);
     const mask = Math.pow(warmth, 0.65) * 3.2;
     data[index] = Math.min(255, r * mask);
@@ -290,8 +285,7 @@ function createObservationPoints(
     if (selected) {
       color.copy(selectedColor);
     } else {
-      // FRP-scaled fire ramp: ember red -> flame orange -> hot yellow core.
-      // Missing FRP renders as mid-flame orange, never as zero.
+      // FRP fire ramp (missing FRP = mid-flame, never zero).
       const frp = typeof observation.frp === "number" && Number.isFinite(observation.frp) ? observation.frp : 12;
       const heat = Math.max(0, Math.min(1, Math.log10(1 + Math.max(0, frp)) / 2));
       if (heat < 0.5) color.copy(ember).lerp(flame, heat * 2);
@@ -405,7 +399,6 @@ function createSatelliteModel(): { group: THREE.Group; dispose: () => void } {
     return mesh;
   };
 
-  // The equipment bus uses layered foil, radiators, and exposed structural rails.
   box("bus frame", [0.43, 0.48, 0.39], [0, 0, 0], structureDark);
   box("gold thermal blanket front", [0.35, 0.37, 0.025], [0, 0.015, 0.207], foil);
   box("gold thermal blanket rear", [0.35, 0.37, 0.025], [0, 0.015, -0.207], foilLight);
@@ -416,7 +409,6 @@ function createSatelliteModel(): { group: THREE.Group; dispose: () => void } {
   box("front antenna deck", [0.25, 0.09, 0.035], [0, 0.275, 0.035], structure);
   box("rear radiator", [0.3, 0.31, 0.025], [0.015, 0.025, -0.23], structure);
 
-  // Small instruments, rails, thrusters, and plumbing break up the bus silhouette.
   for (const x of [-0.16, 0.16]) {
     for (const z of [-0.13, 0.13]) {
       cylinder("bus corner standoff", 0.028, 0.028, 0.4, [x, 0, z], structure, 8);
@@ -434,7 +426,7 @@ function createSatelliteModel(): { group: THREE.Group; dispose: () => void } {
   cylinder("sensor barrel", 0.039, 0.054, 0.14, [0.08, -0.06, 0.36], structure, 12).rotation.x = Math.PI / 2;
   cylinder("sensor aperture", 0.033, 0.033, 0.012, [0.08, -0.06, 0.437], emissiveMaterial, 12).rotation.x = Math.PI / 2;
 
-  // Solar wings: individual blue cells, reflective rails, and deployment booms.
+  // Solar wings.
   for (const side of [-1, 1]) {
     const wing = new THREE.Group();
     wing.name = side < 0 ? "port solar wing" : "starboard solar wing";
@@ -487,7 +479,7 @@ function createSatelliteModel(): { group: THREE.Group; dispose: () => void } {
     strut("wing support brace", new THREE.Vector3(side * 0.22, -0.18, -0.015), new THREE.Vector3(side * 0.4, 0.18, -0.015), 0.012, structure);
   }
 
-  // Concave reflectors, feed horns, and booms give the craft its communications payload silhouette.
+  // Comms dishes.
   const addDish = (name: string, position: [number, number, number], radius: number, surface: THREE.Material) => {
     const dishGroup = new THREE.Group();
     dishGroup.name = name;
@@ -690,14 +682,14 @@ export function ThreeGlobeView({
           earthUniforms.nightMap.value = nightLightsTexture;
           texture.dispose();
         } catch {
-          // Fall back to the raw night map rather than losing the night side.
+          // Fall back to raw night map.
           earthUniforms.nightMap.value = texture;
         }
         blackPixel.dispose();
       },
       undefined,
       () => {
-        // Night texture missing: the terminator still darkens the day side.
+        // No night texture: terminator still darkens day side.
       }
     );
     const earth = new THREE.Mesh(
@@ -796,8 +788,7 @@ export function ThreeGlobeView({
         hit?.index === undefined ? null : observationIdsRef.current[hit.index] ?? null
       );
       if (hit?.index === undefined && onMapClickRef.current) {
-        // Empty globe click: report the surface lat/lon so the app can lock
-        // it as the query center (inverse of observationPosition).
+        // Empty click: report lat/lon as query center.
         const [surface] = raycaster.intersectObject(earth);
         if (surface) {
           const local = globeGroup.worldToLocal(surface.point.clone()).normalize();

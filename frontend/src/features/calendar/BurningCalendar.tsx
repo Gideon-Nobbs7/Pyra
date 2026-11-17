@@ -21,8 +21,7 @@ export function BurningCalendar({ buckets, selectedMonth, onSelectMonth }: {
     const month = bucket.start.slice(0, 7);
     if (month.startsWith(`${year}-`)) counts.set(month, (counts.get(month) ?? 0) + bucket.count);
   }
-  // The year summary returns only months with detections; a queried month
-  // with no stored rows is a zero for this view, not a missing value.
+  // Months without rows render as zero, not missing.
   for (let index = 0; index < 12; index += 1) {
     const key = `${year}-${String(index + 1).padStart(2, "0")}`;
     if (!counts.has(key)) counts.set(key, 0);

@@ -1,8 +1,3 @@
-/**
- * Provisional frontend contract based on the repository guide. The agreed
- * docs/api-contract.md is not present in this checkout; align these wire
- * shapes when that contract becomes available.
- */
 export type Observation = {
   id: string;
   source: "modis" | "viirs";
@@ -102,9 +97,9 @@ export type PlaceResponse = { data: PlaceSuggestion[] };
 export type DemoStateOverride = "empty" | "unavailable" | "error" | "stale";
 
 export type ApiClientOptions = {
-  /** Fixture fallback is enabled by default only in Vite development mode. */
+  /** Fixture fallback (Vite dev default). */
   demoMode?: boolean;
-  /** Deterministically surface a state for local demos and UI verification. */
+  /** Force a state for demos/tests. */
   stateOverride?: DemoStateOverride;
   fetchImpl?: typeof fetch;
 };

@@ -1,9 +1,4 @@
-"""GET /api/v1/summary — hotspot counts bucketed by day, month, or year.
-
-Same filters and envelope semantics as /observations. Buckets derive from
-the stored records (DB when configured, labelled fixtures otherwise), so the
-globe, chart, and calendar always render one response snapshot.
-"""
+"""GET /api/v1/summary: hotspot counts by day/month/year (same envelope as observations)."""
 
 import logging
 from datetime import UTC, datetime

@@ -1,11 +1,4 @@
-"""GET /api/v1/observations (FIRMS-backed with fixture fallback).
-
-Strict validation, time + area applied together, opaque cursor, explicit
-empty vs unavailable. When DATABASE_URL is set, Postgres is the source of
-truth; fixtures serve only if the database is unreachable (logged) or not
-configured. Fixture mode keeps the narrow Attica/Aug-2024 coverage gate;
-DB mode treats zero matches as empty.
-"""
+"""GET /api/v1/observations: validated time+area query, Postgres first, fixtures fallback."""
 
 import logging
 from datetime import UTC, datetime, timedelta
@@ -43,7 +36,7 @@ def _bbox_intersects(a: tuple[float, float, float, float], b: tuple[float, float
 def _maybe_on_demand_fetch(
     start, end, bbox: list[float], products: list[str], limit: int, offset: int
 ) -> tuple[list, bool]:
-    """Bounded live FIRMS pull on a DB miss. Warms Postgres; caller re-reads."""
+    """Live FIRMS pull on DB miss, warms Postgres for re-read."""
     if not firms.map_key():
         return [], False
     window = firms.on_demand_window(start, end, bbox)
@@ -92,12 +85,7 @@ async def _live_observations(
     limit: int,
     offset: int,
 ) -> JSONResponse:
-    """Live FIRMS read with no persistence: no cache, no DB, no upsert.
-
-    Same bounded window policy as the on-demand path (recent, small bbox),
-    but rows are served directly and never stored. Concurrent identical live
-    requests share a single-flight lock to protect the shared FIRMS quota.
-    """
+    """Live FIRMS read: no cache/DB/upsert. Single-flight per identical request."""
     bbox = [min_lon, min_lat, max_lon, max_lat]
     window = firms.on_demand_window(start, end, bbox)
     if window is None:
@@ -216,12 +204,7 @@ async def _live_observations(
 
 
 def _enqueue_gap_fill(start, end, bbox: list[float]) -> None:
-    """Best-effort gap-fill: the user's locked bbox, for the worker.
-
-    Only windows the synchronous on-demand fetch cannot cover (history or
-    wide areas). Recent+small misses are the sync path's job. Never fails
-    the request.
-    """
+    """Best-effort gap-fill enqueue (history/wide windows only)."""
     try:
         if firms.on_demand_window(start, end, bbox) is not None:
             return
@@ -238,7 +221,7 @@ def _enqueue_gap_fill(start, end, bbox: list[float]) -> None:
 
 
 def _inside_fixture_coverage(start, end, min_lon, min_lat, max_lon, max_lat) -> bool:
-    """True when the query falls inside the labelled M1 fixture window."""
+    """True inside the labelled M1 fixture window."""
     time_outside = end < FIXTURE_START or start > FIXTURE_END
     area_outside = (max_lon < FIXTURE_BBOX[0] or min_lon > FIXTURE_BBOX[2]) or (
         max_lat < FIXTURE_BBOX[1] or min_lat > FIXTURE_BBOX[3]
@@ -247,7 +230,7 @@ def _inside_fixture_coverage(start, end, min_lon, min_lat, max_lon, max_lat) -> 
 
 
 def _fixture_page(start, end, min_lon, min_lat, max_lon, max_lat, products, limit, offset):
-    """Filter the synthetic fixtures by time + area. Returns (page, has_more, total)."""
+    """Filter fixtures by time+area. Returns (page, has_more, total)."""
     records = load_fixtures()
     kept = []
     for r in records:
@@ -283,8 +266,7 @@ def _envelope(
     coverage_reason,
     synthetic,
 ):
-    """Converged response shape: the frontend's expected fields plus the
-    backend's explicit state, freshness, and provenance fields."""
+    """Shared response envelope: data + state, freshness, provenance."""
     available = coverage_status != "unavailable"
     filters = {"start": start_iso, "end": end_iso, "bbox": bbox_list, "products": products}
     return {
@@ -349,7 +331,7 @@ async def list_observations(request: Request) -> JSONResponse:
             start, end, min_lon, min_lat, max_lon, max_lat, bbox_raw, products, limit, offset
         )
 
-    # Coverage gate applies to fixture-only mode (no DB configured).
+    # Fixture-only coverage gate.
     if not db.db_configured():
         if not _inside_fixture_coverage(start, end, min_lon, min_lat, max_lon, max_lat):
             return JSONResponse(
@@ -400,7 +382,7 @@ async def list_observations(request: Request) -> JSONResponse:
                     offset,
                 )
                 if not page:
-                    # Cache + DB miss: bounded live pull warms Postgres, then re-read.
+                    # DB miss: bounded live pull, then re-read.
                     page, has_more = _maybe_on_demand_fetch(
                         start, end, [min_lon, min_lat, max_lon, max_lat], products, limit, offset
                     )
@@ -411,8 +393,7 @@ async def list_observations(request: Request) -> JSONResponse:
                 if not page and _inside_fixture_coverage(
                     start, end, min_lon, min_lat, max_lon, max_lat
                 ):
-                    # No source-backed rows here yet: labelled fixtures keep the
-                    # demo window working until archive ingest covers it.
+                    # No stored rows yet: labelled fixtures cover the demo window.
                     page, has_more, total = _fixture_page(
                         start,
                         end,

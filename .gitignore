@@ -241,3 +241,6 @@ practical-theme-*.json
 
 screenshots
 docs/demo*
+
+# Agents
+AGENTS.md

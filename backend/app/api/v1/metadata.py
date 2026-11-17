@@ -8,7 +8,7 @@ router = APIRouter()
 
 
 def _freshness() -> tuple[dict, bool]:
-    """DB freshness when a store answers, else the fixture statement. Never raises."""
+    """DB or fixture freshness"""
     if db.db_configured():
         try:
             fresh = db.fetch_freshness()

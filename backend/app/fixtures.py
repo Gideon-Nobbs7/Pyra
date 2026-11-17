@@ -1,8 +1,5 @@
-"""Synthetic fixture loader for M1 scaffold.
-
-Clearly labelled synthetic data. No real FIRMS records here.
-Covers a fixed Attica bbox + Aug 2024 window so frontend can integrate
-before the real bounded ingest lands.
+"""
+Labelled synthetic fixtures (Attica, Aug 2024). No real FIRMS records.
 """
 
 import json
@@ -11,8 +8,6 @@ from pathlib import Path
 
 FIXTURE_PATH = Path(__file__).resolve().parent.parent / "fixtures" / "synthetic_attica_aug2024.json"
 
-# Fixed coverage the fixtures claim to represent. Requests outside this
-# return coverage_status=unavailable, not empty.
 FIXTURE_BBOX = (22.9, 37.7, 24.3, 38.5)  # min_lon, min_lat, max_lon, max_lat (Attica)
 FIXTURE_START = datetime(2024, 8, 1, 0, 0, 0, tzinfo=UTC)
 FIXTURE_END = datetime(2024, 8, 31, 23, 59, 59, tzinfo=UTC)

@@ -1,5 +1,3 @@
-"""Shared query validation for /api/v1."""
-
 import base64
 from datetime import UTC, datetime
 

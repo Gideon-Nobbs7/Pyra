@@ -119,8 +119,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // A shared link carries its own center: fly there once the globe is up.
-    // Searching or tapping location still flies via lockPlace afterwards.
+    // Shared link: fly once globe is ready.
     if (!booted || initialFlyToDoneRef.current) return;
     if (!new URLSearchParams(window.location.search).get("center")) return;
     initialFlyToDoneRef.current = true;

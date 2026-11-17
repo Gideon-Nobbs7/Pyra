@@ -1,15 +1,4 @@
-"""FIRMS access: parsing, harmonization, upsert, and bounded on-demand fetch.
-
-On-demand policy (request path may trigger a live fetch ONLY when all hold):
-- MAP_KEY is configured server-side;
-- the DB returned zero rows for the query (never alongside cached/DB data);
-- the window is recent (end within ON_DEMAND_LOOKBACK_DAYS);
-- the bbox area is within ON_DEMAND_MAX_DEG2;
-- the global provider rate limit allows it (MIN_PROVIDER_INTERVAL_S).
-
-The fetch window is clamped to the last 5 days (FIRMS API day-range cap).
-History is the archive ingest's job, never the request path's.
-"""
+"""FIRMS access: parse, harmonize, upsert, and bounded on-demand fetch."""
 
 import csv
 import hashlib
@@ -26,12 +15,7 @@ log = logging.getLogger("pyra.firms")
 
 FIRMS_API_HOST = "firms.modaps.eosdis.nasa.gov"
 
-# SOURCE strings per the FIRMS web-services docs (/api/area/). No VERSION
-# segment in the current API. NRT = near/real/ultra-real-time tail.
-# Override without a code change via FIRMS_API_PRODUCTS, e.g.
-#   {"modis": "MODIS_NRT", "viirs_n20": "VIIRS_NOAA20_NRT", ...}
-# Unknown keys are rejected; missing keys keep the built-in defaults.
-# Suomi NPP is excluded (spacecraft retired Nov 2026).
+# FIRMS /api/area/ product strings (no VERSION segment). Overridable via FIRMS_API_PRODUCTS.
 DEFAULT_API_PRODUCTS = {
     "modis": "MODIS_NRT",
     "viirs_n20": "VIIRS_NOAA20_NRT",
@@ -84,7 +68,7 @@ def _utcnow() -> datetime:
 
 
 def load_api_products() -> dict[str, str]:
-    """API product strings, overridable via FIRMS_API_PRODUCTS JSON. Fail loudly."""
+    """API product strings (FIRMS_API_PRODUCTS override."""
     raw = get_settings().firms_api_products.strip()
     if not raw:
         return dict(DEFAULT_API_PRODUCTS)
@@ -158,7 +142,7 @@ def _float_or_none(value: str | None) -> float | None:
 
 
 def iter_raw_rows(lines, family: str | None = None):
-    """Stream FIRMS CSV lines into raw row dicts. Skips invalid rows loudly."""
+    """Yield valid raw FIRMS rows; skip bad lines with a warning."""
     reader = csv.DictReader(lines)
     if not reader.fieldnames:
         raise ValueError("empty CSV or missing header")
@@ -190,7 +174,7 @@ def iter_raw_rows(lines, family: str | None = None):
 
 
 def parse_firms_csv(text: str, family: str | None = None) -> list[dict]:
-    """Parse FIRMS CSV text into raw row dicts. Skips invalid rows loudly."""
+    """Parse FIRMS CSV text into raw row dicts."""
     rows = list(iter_raw_rows(io.StringIO(text), family=family))
     log.info("parsed %d rows", len(rows))
     return rows
@@ -206,18 +190,12 @@ def synth_source_record_id(
 
 
 def event_key_for(lat: float, lon: float, observed_at: datetime) -> str:
-    """Shared fire-event key: ~1 km cell + UTC day, across sensors.
-
-    Twins from MODIS and VIIRS for the same fire get the same key while each
-    row keeps its own id, provenance, and measurements. Mirrors the frontend
-    corroboration cell rule. Naive datetimes are treated as UTC (the ingest
-    path normalizes to UTC before harmonizing).
-    """
+    """Fire-event key: ~1 km cell + UTC day"""
     return f"{lat:.2f},{lon:.2f},{observed_at.date().isoformat()}"
 
 
 def harmonize(parsed: dict, source: str, ingested_at: datetime) -> dict:
-    """Map one parsed FIRMS row onto the harmonized observation record."""
+    """Map one FIRMS row to the harmonized observation."""
     raw = parsed["raw"]
     family = parsed["family"]
     satellite = (raw.get("satellite") or "").strip()
@@ -288,7 +266,7 @@ def prepare_records(
         if not in_bbox(p["latitude"], p["longitude"], bbox):
             continue
         records.append(harmonize(p, source, ingested_at))
-    # Dedupe identical content within one load (same synth ID).
+    # Dedupe by synth ID within one load.
     seen: dict[str, dict] = {}
     for r in records:
         seen[r["source_record_id"]] = r
@@ -301,7 +279,7 @@ def upsert_records(records: list[dict], database_url: str) -> int:
 
     if not records:
         return 0
-    # Pooled write: same pooler-safe kwargs as reads (no prepared statements).
+    
     with db_module.get_pool(database_url, role="ingest").connection() as conn:
         with conn.cursor() as cur:
             cur.executemany(UPSERT_SQL, records)
@@ -310,7 +288,6 @@ def upsert_records(records: list[dict], database_url: str) -> int:
 
 
 def open_archive_text(path: str):
-    """Open a .csv (or the first .csv inside a .zip) as a text stream. Caller closes."""
     import zipfile
 
     if path.lower().endswith(".zip"):
@@ -333,11 +310,7 @@ def stream_archive(
     database_url: str,
     batch_size: int = 2000,
 ) -> dict:
-    """Stream an archive file (csv/zip) through harmonize+upsert in batches.
-
-    Memory stays flat regardless of file size; only bbox-matching rows are kept.
-    Returns a summary dict for verify-then-delete.
-    """
+    """Stream an archive through harmonize+upsert in batches and return summary"""
     if source in LEGACY_SNPP_SOURCES:
         raise ValueError("Suomi NPP ingest is disabled (spacecraft retired Nov 2026)")
     if source not in ("modis", "viirs"):
@@ -399,7 +372,6 @@ def _source_for_product(name: str) -> str:
 def on_demand_window(
     start: datetime, end: datetime, bbox: list[float] | tuple[float, ...]
 ) -> tuple[str, str, str] | None:
-    """Clamped (start, end, bbox) fetch window, or None when out of policy."""
     now = _utcnow()
     if end < now - timedelta(days=ON_DEMAND_LOOKBACK_DAYS):
         return None  # historical gap: the archive ingest's job
@@ -414,7 +386,6 @@ def on_demand_window(
 
 
 def rate_limit_ok() -> bool:
-    """One provider call per MIN_PROVIDER_INTERVAL_S, process-wide."""
     global _last_provider_call
     now = time.monotonic()
     if now - _last_provider_call < MIN_PROVIDER_INTERVAL_S:
@@ -424,7 +395,6 @@ def rate_limit_ok() -> bool:
 
 
 def reset_rate_limit() -> None:
-    """Tests only."""
     global _last_provider_call
     _last_provider_call = 0.0
 
@@ -436,11 +406,6 @@ def fetch_live_records(
     fetch_end: str,
     timeout_s: int = 8,
 ) -> tuple[list[dict], list[dict]]:
-    """Bounded live pull with NO persistence. Returns (records, failures).
-
-    Same provider call as the ingest path, but rows are returned, never
-    written. Used by live mode and the on-demand read path (which upserts).
-    """
     key = map_key()
     if not key:
         raise ValueError("FIRMS_MAP_KEY is not set")
@@ -475,7 +440,6 @@ def fetch_and_store(
     fetch_end: str,
     database_url: str,
 ) -> tuple[int, list[dict]]:
-    """Bounded live pull for the requested sources. Returns (rows, failures)."""
     records, failures = fetch_live_records(products, sources, bbox, fetch_end, timeout_s=30)
     total = upsert_records(records, database_url)
     return total, failures

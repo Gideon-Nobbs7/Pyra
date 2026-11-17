@@ -105,7 +105,7 @@ function readSelectionFromUrl(): QuerySelection {
 function writeSelectionToUrl(selection: QuerySelection): void {
   const params = new URLSearchParams(window.location.search);
   if (selection.areaSource === "location") {
-    // A one-time location fix must not be persisted in a share URL or browser history.
+    // One-time fix: never persist in share URL/history.
     params.delete("bbox");
     params.delete("area");
     params.delete("center");
@@ -194,21 +194,16 @@ export function useSnapshotQuery() {
   const retry = useCallback(() => setRetryCount((count) => count + 1), []);
 
   useEffect(() => {
-    // Leave a fresh URL bare: only persist once the user acts or the URL
-    // already carries a selection (share link, back/forward navigation).
+    // Keep fresh URL bare until user acts or selection exists.
     if (dirtyRef.current || window.location.search.length > 1) writeSelectionToUrl(query);
     const controller = new AbortController();
     const requestId = ++requestIdRef.current;
     const requestedQuery = toObservationQuery(query);
     setSnapshot({ state: "loading", query, data: null, dataQuery: null, retrievedAt: null, synthetic: false, summary: null, dailySummary: null, yearSummary: null, comparison: null });
 
-    // Live mode is an observations-only pull: summary, comparison, and CSV keep
-    // the stored archive for the same filters so the panels stay comparable.
     const storedQuery = { ...requestedQuery };
     delete storedQuery.live;
-    // Year-wide monthly buckets feed the burning activity calendar so all
-    // twelve months of the selected year render with figures and color.
-    // Stored archive, like the chart: live mode never changes history.
+    // Year buckets feed the calendar (stored archive, live never rewrites history).
     const year = query.selectedMonth.slice(0, 4);
     void Promise.all([
       apiClient.getObservations(requestedQuery, { signal: controller.signal }),
@@ -239,7 +234,7 @@ export function useSnapshotQuery() {
     });
 
     return () => controller.abort();
-  // queryKey captures every shareable filter field and triggers exactly one request per selection.
+  // queryKey: one request per selection.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryKey, retryCount]);
 

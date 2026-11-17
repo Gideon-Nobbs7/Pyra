@@ -56,17 +56,12 @@ export function getCorroboration(observation: Observation): boolean | null {
   return typeof raw === "boolean" ? raw : null;
 }
 
-/** Cell a detection falls in for cross-sensor matching: ~1 km grid cell + UTC day. */
+/** Cross-sensor match key: ~1 km cell + UTC day. */
 export function observationCellKey(observation: Pick<Observation, "latitude" | "longitude" | "observed_at">): string {
   return `${observation.latitude.toFixed(2)},${observation.longitude.toFixed(2)},${observation.observed_at.slice(0, 10)}`;
 }
 
-/**
- * Cross-sensor corroboration computed from the loaded set: true when both
- * MODIS and VIIRS saw the same cell on the same day. A same-day, same-cell
- * detection by both sensors raises confidence it is a real hotspot rather
- * than a sensor artifact (sun glint, scan-edge noise).
- */
+/** True when MODIS+VIIRS saw the same cell/day; guards sun-glint artifacts. */
 export function buildCorroborationMap(observations: Observation[]): Map<string, boolean> {
   const sensors = new Map<string, Set<string>>();
   for (const item of observations) {

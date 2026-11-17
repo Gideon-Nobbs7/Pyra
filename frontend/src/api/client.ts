@@ -179,7 +179,6 @@ async function unavailableMessage(response: Response): Promise<string> {
       return `${fallback} ${body.error.message}`;
     }
   } catch {
-    // Non-JSON or empty body: stay with the generic message.
   }
   return fallback;
 }

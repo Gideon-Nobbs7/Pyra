@@ -10,7 +10,6 @@ router = APIRouter()
 
 @router.get("/health")
 def health() -> JSONResponse:
-    # No secrets, no internals.
     return JSONResponse(
         {
             "status": "ok",
